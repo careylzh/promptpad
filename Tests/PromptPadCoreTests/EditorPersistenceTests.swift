@@ -68,6 +68,24 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(model.selection, EditorSelection(location: 0, length: 6))
     }
 
+    func testEditorModelDefaultsToEditDisplayMode() {
+        let model = PromptEditorModel(persistence: InMemoryEditorPersistence())
+
+        XCTAssertEqual(model.displayMode, .edit)
+    }
+
+    func testEditorModelDisplayModeDoesNotModifyText() {
+        let model = PromptEditorModel(
+            text: "# Heading\n\nRaw **markdown**",
+            persistence: InMemoryEditorPersistence()
+        )
+
+        model.displayMode = .preview
+        model.displayMode = .edit
+
+        XCTAssertEqual(model.text, "# Heading\n\nRaw **markdown**")
+    }
+
     func testEditorSelectionClampsNegativeValues() {
         let selection = EditorSelection(location: -3, length: -8)
 

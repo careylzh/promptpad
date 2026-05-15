@@ -4,16 +4,19 @@ import Foundation
 public final class PromptEditorModel: ObservableObject {
     @Published public var text: String
     @Published public var selection: EditorSelection
+    @Published public var displayMode: EditorDisplayMode
 
     private let persistence: EditorPersistence
 
     public init(
         text: String = "",
         selection: EditorSelection = .zero,
+        displayMode: EditorDisplayMode = .edit,
         persistence: EditorPersistence
     ) {
         self.text = text
         self.selection = selection
+        self.displayMode = displayMode
         self.persistence = persistence
     }
 
@@ -33,6 +36,24 @@ public final class PromptEditorModel: ObservableObject {
         let edit = MarkdownBoldEdit.apply(to: text, selection: selection)
         text = edit.text
         selection = edit.selection
+    }
+}
+
+public enum EditorDisplayMode: String, CaseIterable, Equatable, Identifiable, Sendable {
+    case edit
+    case preview
+
+    public var id: String {
+        rawValue
+    }
+
+    public var title: String {
+        switch self {
+        case .edit:
+            "Edit"
+        case .preview:
+            "Preview"
+        }
     }
 }
 

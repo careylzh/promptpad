@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - Resolve platform-specific storage roots in the app target, then use `PromptPadCore` helpers for deterministic document URLs and file persistence behavior that can be unit tested.
 - Expose editor command state such as selection through small `PromptPadCore` value types, then keep AppKit bridge synchronization in the app target via SwiftUI bindings.
 - Implement editor text transformations as small `PromptPadCore` command helpers that return updated text and selection, then let the AppKit bridge invoke them from focused editor key events.
+- Keep editor presentation mode state in `PromptPadCore`, while app-target SwiftUI views decide how to render each mode.
 
 ---
 
@@ -76,4 +77,17 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: core command helpers should return both updated text and updated selection so keyboard shortcuts remain deterministic and unit testable without launching the macOS UI.
   - Gotchas encountered: `NSTextView` selections are UTF-16 `NSRange` values, so core text transformations need to translate selection offsets through `String.Index(utf16Offset:in:)`.
+---
+
+## 2026-05-15 - US-006
+- Added optional edit/preview display mode state to `PromptEditorModel`, with edit mode as the default launch state.
+- Added a compact segmented mode switch in the editor window without introducing a full toolbar.
+- Added a Markdown preview view that renders the current raw Markdown through Swift `AttributedString` Markdown parsing for headings, emphasis, code, and lists while leaving the raw editor text unchanged.
+- Added core tests proving default edit mode and that switching display modes does not mutate the Markdown text.
+- Verified `swift build` passes.
+- Verified tests pass with `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`; plain `swift test` is still blocked in this execution sandbox by Clang module-cache permissions before package manifest compilation.
+- Files changed: `Sources/PromptPad/PromptPadApp.swift`, `Sources/PromptPadCore/PromptEditorModel.swift`, `Tests/PromptPadCoreTests/EditorPersistenceTests.swift`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: keep display-mode state in core for testability, and keep platform-specific Markdown rendering in the SwiftUI app target.
+  - Gotchas encountered: plain `swift test` can fail before compiling tests when the sandbox cannot write `~/.cache/clang/ModuleCache`; redirecting `CLANG_MODULE_CACHE_PATH` inside `.build` preserves verification in this environment.
 ---

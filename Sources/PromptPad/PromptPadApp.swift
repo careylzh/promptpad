@@ -28,7 +28,31 @@ private struct EditorWindow: View {
             Color(nsColor: .textBackgroundColor)
                 .ignoresSafeArea()
 
-            PromptEditorView(text: $editor.text, selection: $editor.selection)
+            VStack(spacing: 0) {
+                HStack {
+                    Spacer()
+
+                    Picker("Editor mode", selection: $editor.displayMode) {
+                        ForEach(EditorDisplayMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 164)
+                    .padding(.top, 18)
+                    .padding(.trailing, 22)
+                }
+
+                Group {
+                    switch editor.displayMode {
+                    case .edit:
+                        PromptEditorView(text: $editor.text, selection: $editor.selection)
+                    case .preview:
+                        MarkdownPreviewView(markdown: editor.text)
+                    }
+                }
+            }
         }
         .onChange(of: editor.text) {
             try? editor.save()
@@ -53,6 +77,36 @@ private struct EditorWindow: View {
                 ?? PromptEditorModel(persistence: persistence)
         } catch {
             preconditionFailure("Unable to resolve Application Support storage: \(error)")
+        }
+    }
+}
+
+private struct MarkdownPreviewView: View {
+    let markdown: String
+
+    var body: some View {
+        ScrollView {
+            Text(Self.renderedMarkdown(from: markdown))
+                .font(.custom(PromptPadStyle.editorFontName, size: PromptPadStyle.editorFontSize))
+                .foregroundStyle(.secondary)
+                .lineSpacing(PromptPadStyle.editorLineSpacing)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(PromptPadStyle.editorPadding)
+        }
+        .accessibilityLabel("Markdown preview")
+    }
+
+    private static func renderedMarkdown(from markdown: String) -> AttributedString {
+        do {
+            return try AttributedString(
+                markdown: markdown,
+                options: AttributedString.MarkdownParsingOptions(
+                    interpretedSyntax: .full
+                )
+            )
+        } catch {
+            return AttributedString(markdown)
         }
     }
 }
