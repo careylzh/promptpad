@@ -28,8 +28,11 @@ private struct PlainTextEditor: NSViewRepresentable {
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
 
-        let textView = NSTextView(frame: .zero)
+        let textView = MarkdownTextView(frame: .zero)
         textView.delegate = context.coordinator
+        textView.onApplyMarkdownBold = {
+            context.coordinator.applyMarkdownBold()
+        }
         textView.string = text
         textView.isEditable = true
         textView.isSelectable = true
@@ -171,6 +174,24 @@ private struct PlainTextEditor: NSViewRepresentable {
             }
         }
 
+        func applyMarkdownBold() {
+            guard let textView else {
+                return
+            }
+
+            updateSelection(from: textView)
+            let edit = MarkdownBoldEdit.apply(
+                to: textView.string,
+                selection: selection.wrappedValue
+            )
+            textView.string = edit.text
+            textView.setSelectedRange(
+                NSRange(location: edit.selection.location, length: edit.selection.length)
+            )
+            text.wrappedValue = edit.text
+            selection.wrappedValue = edit.selection
+        }
+
         private func updateSelection(from textView: NSTextView) {
             let range = textView.selectedRange()
             let editorSelection = EditorSelection(location: range.location, length: range.length)
@@ -178,5 +199,26 @@ private struct PlainTextEditor: NSViewRepresentable {
                 selection.wrappedValue = editorSelection
             }
         }
+    }
+}
+
+private final class MarkdownTextView: NSTextView {
+    var onApplyMarkdownBold: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        if event.isCommandB {
+            onApplyMarkdownBold?()
+            return
+        }
+
+        super.keyDown(with: event)
+    }
+}
+
+private extension NSEvent {
+    var isCommandB: Bool {
+        let flags = modifierFlags.intersection(.deviceIndependentFlagsMask)
+        return flags.subtracting([.capsLock, .numericPad, .function]) == .command
+            && charactersIgnoringModifiers?.lowercased() == "b"
     }
 }

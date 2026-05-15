@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - Define editor state and persistence contracts in `PromptPadCore`; let the app target choose the concrete platform storage location and keep SwiftUI/AppKit editor rendering in app-target views.
 - Resolve platform-specific storage roots in the app target, then use `PromptPadCore` helpers for deterministic document URLs and file persistence behavior that can be unit tested.
 - Expose editor command state such as selection through small `PromptPadCore` value types, then keep AppKit bridge synchronization in the app target via SwiftUI bindings.
+- Implement editor text transformations as small `PromptPadCore` command helpers that return updated text and selection, then let the AppKit bridge invoke them from focused editor key events.
 
 ---
 
@@ -62,4 +63,17 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: expose selection as a small core value type and let the AppKit bridge map `NSTextView.selectedRange()` into the model through bindings.
   - Gotchas encountered: Swift 6 requires immutable shared core value types used in static constants to conform to `Sendable`, and AppKit sizing constants sometimes need explicit `CGFloat` qualification.
+---
+
+## 2026-05-15 - US-005
+- Implemented Cmd+B Markdown bold behavior in the main AppKit-backed editor.
+- Added a reusable `MarkdownBoldEdit` core helper and `PromptEditorModel.applyMarkdownBold()` so selected text becomes `**selected text**`, empty selections insert `****`, and the cursor lands between the marker pairs.
+- Wired a focused `NSTextView` subclass to intercept Cmd+B and update the same text binding used by autosave.
+- Added unit coverage for selected text wrapping, empty-selection insertion/cursor placement, and model text-state mutation.
+- Verified `swift build` passes.
+- Verified tests pass with `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`; plain `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test` ran all tests successfully but exited nonzero because this sandbox reports `sandbox-exec: sandbox_apply: Operation not permitted` while validating the manifest.
+- Files changed: `Sources/PromptPad/PromptEditorView.swift`, `Sources/PromptPadCore/PromptEditorModel.swift`, `Tests/PromptPadCoreTests/EditorPersistenceTests.swift`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: core command helpers should return both updated text and updated selection so keyboard shortcuts remain deterministic and unit testable without launching the macOS UI.
+  - Gotchas encountered: `NSTextView` selections are UTF-16 `NSRange` values, so core text transformations need to translate selection offsets through `String.Index(utf16Offset:in:)`.
 ---

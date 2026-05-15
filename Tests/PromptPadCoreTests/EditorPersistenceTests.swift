@@ -74,6 +74,40 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(selection, .zero)
     }
 
+    func testMarkdownBoldWrapsSelectedTextAndPreservesSurroundingText() {
+        let edit = MarkdownBoldEdit.apply(
+            to: "Make this bold today",
+            selection: EditorSelection(location: 5, length: 9)
+        )
+
+        XCTAssertEqual(edit.text, "Make **this bold** today")
+        XCTAssertEqual(edit.selection, EditorSelection(location: 5, length: 13))
+    }
+
+    func testMarkdownBoldInsertsMarkersAndPlacesCursorBetweenThem() {
+        let edit = MarkdownBoldEdit.apply(
+            to: "Draft prompt",
+            selection: EditorSelection(location: 6, length: 0)
+        )
+
+        XCTAssertEqual(edit.text, "Draft ****prompt")
+        XCTAssertEqual(edit.selection, EditorSelection(location: 8, length: 0))
+    }
+
+    func testEditorModelAppliesMarkdownBoldToAutosavedTextState() {
+        let persistence = InMemoryEditorPersistence()
+        let model = PromptEditorModel(
+            text: "Hello world",
+            selection: EditorSelection(location: 6, length: 5),
+            persistence: persistence
+        )
+
+        model.applyMarkdownBold()
+
+        XCTAssertEqual(model.text, "Hello **world**")
+        XCTAssertEqual(model.selection, EditorSelection(location: 6, length: 9))
+    }
+
     private func temporaryFileURL() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

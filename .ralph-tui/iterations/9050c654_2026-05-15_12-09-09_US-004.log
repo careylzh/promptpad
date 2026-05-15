@@ -1,0 +1,94 @@
+# Iteration 4 Log
+
+## Metadata
+
+- **Task ID**: US-004
+- **Task Title**: Build NSTextView-Based Editor
+- **Description**: As a prompt writer, I want a plaintext-first editor with reliable text selection so that Markdown editing and keyboard commands work predictably.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-05-15T04:09:09.521Z
+- **Ended At**: 2026-05-15T04:12:00.793Z
+- **Duration**: 2m 51s
+- **Input Tokens**: 498739
+- **Output Tokens**: 6497
+- **Total Tokens**: 505236
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll inspect the project shape and the progress notes first, then trace the current editor implementation before changing anything.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'pwd && rg --files'
+[94m[shell][0m $ /bin/zsh -lc "find . -maxdepth 3 -type f \\( -name 'Package.swift' -o -name '*.swift' \\) -print"
+The app is small and the prior notes confirm the target split: app owns AppKit rendering, core owns testable contracts. I’m reading the editor/model/style files now to see whether the bridge already exists or needs to replace a SwiftUI `TextEditor`.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' Sources/PromptPad/PromptPadApp.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPad/PromptEditorView.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' Sources/PromptPadCore/PromptEditorModel.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' Sources/PromptPadCore/PromptPadStyle.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPadCore/EditorPersistence.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Tests/PromptPadCoreTests/PromptPadStyleTests.swift"
+The current editor is still SwiftUI `TextEditor`, so US-004 is not complete. I’m going to add a small core selection type for command access, then replace the view with an `NSViewRepresentable` wrapping `NSTextView` and configure it for plain text behavior.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Package.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,280p' Tests/PromptPadCoreTests/EditorPersistenceTests.swift"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+The bridge is in place with a bound selection contract in core. I’m running the build/tests now; if SwiftPM hits the same local sandbox issue from earlier iterations, I’ll capture that and use the known package-sandbox workaround for verification.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: [0/1] Planning build
+Building for debugging...
+[0/6] Write sources
+[2/6] Write swift-version--58304C5D6DBC2206.txt
+error: emit-module command failed with exit code 1 (use -v to see invocation)
+[4/9] Compiling PromptPadCore PromptEditorModel.swift
+[5/9] Emitting module PromptPadCore
+/Users/careylai/Desktop/notepad/Sources/PromptPadCore/EditorSelection.swift:7:23: error: static property 'zero' is not concurrency-safe because non-'Sendable' type 'EditorSelection' may have shared mutable state [#Mut][0m
+
+[91m[Error: Another instance of SwiftPM (PID: 6332) is already running using '/Users/careylai/Desktop/notepad/.build', waiting until that process has finished execution...warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessi][0m
+The first build caught a Swift 6 concurrency issue in the new value type: the static `.zero` needs the type to be `Sendable`. I’m applying that small fix, then rerunning checks cleanly.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+
+[91m[Error: Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Emitting module PromptPadCore
+[4/7] Compiling PromptPadCore EditorSelection.swift
+[5/8] Compiling PromptPadCore PromptEditorModel.swift
+[6/11] Compiling PromptPad PromptPadApp.swift
+[7/11] Emitting module PromptPad
+[8/11] Compiling PromptPad PromptEditorView.swift
+/Users/careylai/Desktop/notepad/Sources/PromptPad/PromptEditorView.swift:56:43: error: ambiguous use of 'greatestFiniteMagnitude'
+ 54 |][0m
+
+[91m[Error: Another instance of SwiftPM (PID: 6333) is already running using '/Users/careylai/Desktop/notepad/.build', waiting until that process has finished execution...warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessi][0m
+The next compile pass found a macOS type ambiguity in `NSSize` and a Swift 6 main-actor warning around `NSTextView` selection access. I’m tightening those AppKit calls now rather than leaving fragile compiler behavior.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '48,180p' Sources/PromptPad/PromptEditorView.swift"
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+`swift build` passes now. Plain `swift test` is still blocked before compilation by the host cache permission issue noted in earlier progress entries, so I’m running the established equivalent with the module cache inside `.build` and SwiftPM’s package sandbox disabled.
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+Verification is green with the sandbox-compatible test command: 8 XCTest cases passed. I’m updating the Ralph progress log now, including the reusable selection-state pattern because it belongs in core for future editor commands.
+[94m[shell][0m $ /bin/zsh -lc 'tail -n 80 .ralph-tui/progress.md'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Sources/PromptPad/PromptEditorView.swift Sources/PromptPad/PromptPadApp.sw...
+Implemented US-004.
+
+Replaced the SwiftUI `TextEditor` with an `NSTextView` bridge, configured for plaintext Markdown editing, readable serif styling, minimal chrome, undo, disabled smart substitutions, selection synchronization, and launch focus. Added `EditorSelection` in `PromptPadCore` with model/test coverage.
+
+Verification:
+- `swift build` passes.
+- `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox` passes: 8 tests.
+- Plain `swift test` is still blocked by the local SwiftPM/Clang cache sandbox permission issue already documented in prior iterations.
+
+Updated `.ralph-tui/progress.md` with US-004 notes and the reusable selection-state pattern.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.
