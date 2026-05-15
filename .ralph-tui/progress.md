@@ -7,6 +7,7 @@ after each iteration and it's included in prompts for context.
 
 - Keep the SwiftUI macOS executable target (`PromptPad`) thin and place reusable, testable constants or editor logic in the `PromptPadCore` library target so `swift test` can validate behavior without launching UI.
 - Define editor state and persistence contracts in `PromptPadCore`; let the app target choose the concrete platform storage location and keep SwiftUI/AppKit editor rendering in app-target views.
+- Resolve platform-specific storage roots in the app target, then use `PromptPadCore` helpers for deterministic document URLs and file persistence behavior that can be unit tested.
 
 ---
 
@@ -34,4 +35,17 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: keep reusable editor state and persistence protocols in `PromptPadCore`, then inject a concrete file-backed store from the app shell.
   - Gotchas encountered: avoid overlapping throwing and non-throwing initializer call shapes in Swift when default arguments make them ambiguous at call sites.
+---
+
+## 2026-05-15 - US-003
+- Implemented single-document Application Support persistence wiring for the editor window.
+- Added `PromptPadDocumentStore` in `PromptPadCore` to define the app document path while letting the app target resolve the user Application Support directory.
+- Removed the temporary-directory fallback so the app does not silently store the prompt outside Application Support.
+- Added tests for the Application Support document URL contract and creation of missing persistence directories during saves.
+- Verified `swift build` passes.
+- Verified tests pass with `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`; `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test` executes the tests successfully but exits nonzero here because SwiftPM's manifest sandbox reports `sandbox-exec: sandbox_apply: Operation not permitted`.
+- Files changed: `Sources/PromptPad/PromptPadApp.swift`, `Sources/PromptPadCore/EditorPersistence.swift`, `Tests/PromptPadCoreTests/EditorPersistenceTests.swift`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: app-target storage resolution plus core URL/persistence helpers keeps platform details thin while preserving unit coverage for the single-document path and directory creation behavior.
+  - Gotchas encountered: avoid falling back to temporary storage for a user document because it can satisfy local writes while violating the explicit Application Support persistence contract.
 ---

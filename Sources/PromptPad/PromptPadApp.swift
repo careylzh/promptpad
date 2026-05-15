@@ -20,13 +20,7 @@ private struct EditorWindow: View {
     @StateObject private var editor: PromptEditorModel
 
     init() {
-        let fallbackURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("PromptPad", isDirectory: true)
-            .appendingPathComponent(FileEditorPersistence.defaultFileName, isDirectory: false)
-        let persistence = (try? FileEditorPersistence.applicationSupportStore())
-            ?? FileEditorPersistence(fileURL: fallbackURL)
-        let model = (try? PromptEditorModel(loadingFrom: persistence)) ?? PromptEditorModel(persistence: persistence)
-        _editor = StateObject(wrappedValue: model)
+        _editor = StateObject(wrappedValue: Self.makeEditorModel())
     }
 
     var body: some View {
@@ -38,6 +32,27 @@ private struct EditorWindow: View {
         }
         .onChange(of: editor.text) {
             try? editor.save()
+        }
+    }
+
+    private static func makeEditorModel() -> PromptEditorModel {
+        let fileManager = FileManager.default
+
+        do {
+            let supportDirectory = try fileManager.url(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
+            let documentURL = PromptPadDocumentStore.documentURL(
+                inApplicationSupportDirectory: supportDirectory
+            )
+            let persistence = FileEditorPersistence(fileURL: documentURL, fileManager: fileManager)
+            return (try? PromptEditorModel(loadingFrom: persistence))
+                ?? PromptEditorModel(persistence: persistence)
+        } catch {
+            preconditionFailure("Unable to resolve Application Support storage: \(error)")
         }
     }
 }

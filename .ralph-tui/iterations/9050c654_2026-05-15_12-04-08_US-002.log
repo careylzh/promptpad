@@ -1,0 +1,101 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: US-002
+- **Task Title**: Implement Reusable Editor Core
+- **Description**: As a developer, I want the editor state and persistence logic separated from macOS-specific UI so that the core can later be reused for an iOS version.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-05-15T04:04:08.890Z
+- **Ended At**: 2026-05-15T04:06:37.857Z
+- **Duration**: 2m 28s
+- **Input Tokens**: 383157
+- **Output Tokens**: 6166
+- **Total Tokens**: 389323
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll inspect the package layout, existing progress notes, and current Swift sources first so the core split follows the repo’s existing shape.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'pwd && rg --files'
+[94m[shell][0m $ /bin/zsh -lc "find . -maxdepth 3 -type f \\( -name '*.swift' -o -name 'Package.swift' \\) -print"
+The repo is very small: one SwiftUI app file, one core style file, and one test. I’m reading the package and app implementation now to decide the smallest model/persistence split that gives real test coverage.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPad/PromptPadApp.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Package.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Tests/PromptPadCoreTests/PromptPadStyleTests.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Sources/PromptPadCore/PromptPadStyle.swift"
+I’m going to add a core editor model plus a file-backed persistence service under `PromptPadCore`, then move the macOS `TextEditor` styling into its own app-target view. The app shell will only wire the model to the window.
+The initial split is in place. I’m building now because Swift package targets can expose platform/import issues quickly, especially around observable model support in a reusable library.
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Sources/PromptPad Sources/PromptPadCore Tests/PromptPadCoreTests'
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+
+[91m[Error: [0/1] Planning build
+Building for debugging...
+[0/6] Write sources
+[2/6] Write swift-version--58304C5D6DBC2206.txt
+[4/9] Compiling PromptPadCore EditorPersistence.swift
+[5/9] Compiling PromptPadCore PromptEditorModel.swift
+[6/9] Emitting module PromptPadCore
+[7/12] Emitting module PromptPad
+[8/12] Compiling PromptPad PromptEditorView.swift
+[9/12] Compiling PromptPad PromptPadApp.swift
+/Users/careylai/Desktop/notepad/Sources/PromptPad/PromptPadApp.swift:25:45: error: call can throw, but it is not][0m
+Build found one real issue in the window initializer: the fallback model creation was still using the throwing convenience initializer. I’m tightening that path so failed loads start from an empty reusable model while writes still use the same persistence service.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--58304C5D6DBC2206.txt
+[3/7] Emitting module PromptPad
+[4/7] Compiling PromptPad PromptPadApp.swift
+/Users/careylai/Desktop/notepad/Sources/PromptPad/PromptPadApp.swift:25:21: error: call can throw, but it is not marked with 'try' and the error is not handled
+23 |         let persistence = (try? FileEditorPersistence.applicationSupportStore())
+24 |             ?? FileEditorPersistence(fileURL: FileManager.default.temporaryDir][0m
+
+[91m[Error: Another instance of SwiftPM (PID: 4030) is already running using '/Users/careylai/Desktop/notepad/.build', waiting until that process has finished execution...warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessi][0m
+There’s an initializer naming collision: the model’s default `text` argument makes the non-throwing initializer look like the throwing load initializer at call sites. I’m renaming the load path so the app and tests are explicit.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+`swift build` passes, and the sandbox-compatible test command passes all four XCTest cases. I’m also trying plain `swift test` separately to see whether this environment still has the SwiftPM cache restriction noted by US-001.
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+Plain `swift test` is still blocked by the same sandbox cache write error from US-001, before test compilation. The redirected-cache command passes, so I’m doing a final cleanup pass and then I’ll update the Ralph progress log with both the implementation and that environment gotcha.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+Final build and test verification succeeded with the sandbox-compatible command. I see unrelated Ralph/session metadata already modified in the worktree, so I’m leaving those untouched and only accounting for the files changed for this story.
+[94m[shell][0m $ /bin/zsh -lc 'nl -ba Sources/PromptPadCore/PromptEditorModel.swift'
+[94m[shell][0m $ /bin/zsh -lc 'nl -ba Sources/PromptPadCore/EditorPersistence.swift'
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Sources/PromptPad/PromptPadApp.swift Sources/PromptPad/PromptEditorView.sw...
+[94m[shell][0m $ /bin/zsh -lc 'nl -ba Sources/PromptPad/PromptPadApp.swift'
+[94m[shell][0m $ /bin/zsh -lc 'nl -ba Tests/PromptPadCoreTests/EditorPersistenceTests.swift'
+[94m[shell][0m $ /bin/zsh -lc 'nl -ba Sources/PromptPad/PromptEditorView.swift'
+[94m[shell][0m $ /bin/zsh -lc 'git diff --stat'
+Implemented US-002.
+
+Added reusable editor core in `PromptPadCore`:
+- `PromptEditorModel`
+- `EditorPersistence`
+- `FileEditorPersistence`
+
+Moved platform editor UI into `Sources/PromptPad/PromptEditorView.swift`, leaving `PromptPadApp` as the thin macOS shell wiring persistence and window setup. Added core tests for model and persistence behavior, and updated `.ralph-tui/progress.md`.
+
+Verification:
+- `swift build` passes.
+- `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox` passes all 4 tests.
+- Plain `swift test` is still blocked by the existing sandbox cache permission issue before test compilation.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.

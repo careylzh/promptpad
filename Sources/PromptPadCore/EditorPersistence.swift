@@ -5,6 +5,17 @@ public protocol EditorPersistence {
     func saveText(_ text: String) throws
 }
 
+public enum PromptPadDocumentStore {
+    public static let appDirectoryName = PromptPadStyle.appName
+    public static let fileName = FileEditorPersistence.defaultFileName
+
+    public static func documentURL(inApplicationSupportDirectory supportDirectory: URL) -> URL {
+        supportDirectory
+            .appendingPathComponent(appDirectoryName, isDirectory: true)
+            .appendingPathComponent(fileName, isDirectory: false)
+    }
+}
+
 public struct FileEditorPersistence: EditorPersistence {
     public static let defaultFileName = "prompt.txt"
 
@@ -14,21 +25,6 @@ public struct FileEditorPersistence: EditorPersistence {
     public init(fileURL: URL, fileManager: FileManager = .default) {
         self.fileURL = fileURL
         self.fileManager = fileManager
-    }
-
-    public static func applicationSupportStore(
-        appDirectoryName: String = PromptPadStyle.appName,
-        fileManager: FileManager = .default
-    ) throws -> FileEditorPersistence {
-        let supportDirectory = try fileManager.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let appDirectory = supportDirectory.appendingPathComponent(appDirectoryName, isDirectory: true)
-        let fileURL = appDirectory.appendingPathComponent(defaultFileName, isDirectory: false)
-        return FileEditorPersistence(fileURL: fileURL, fileManager: fileManager)
     }
 
     public func loadText() throws -> String {

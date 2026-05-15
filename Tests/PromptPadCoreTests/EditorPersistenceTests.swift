@@ -3,6 +3,19 @@ import XCTest
 @testable import PromptPadCore
 
 final class EditorPersistenceTests: XCTestCase {
+    func testDocumentStoreBuildsApplicationSupportDocumentURL() {
+        let supportDirectory = URL(fileURLWithPath: "/Users/example/Library/Application Support")
+
+        let documentURL = PromptPadDocumentStore.documentURL(
+            inApplicationSupportDirectory: supportDirectory
+        )
+
+        XCTAssertEqual(
+            documentURL.path,
+            "/Users/example/Library/Application Support/PromptPad/prompt.txt"
+        )
+    }
+
     func testFilePersistenceReturnsEmptyTextWhenFileDoesNotExist() throws {
         let persistence = FileEditorPersistence(fileURL: temporaryFileURL())
 
@@ -16,6 +29,16 @@ final class EditorPersistenceTests: XCTestCase {
         try persistence.saveText("A reusable prompt draft")
 
         XCTAssertEqual(try persistence.loadText(), "A reusable prompt draft")
+    }
+
+    func testFilePersistenceCreatesMissingDirectoriesWhenSaving() throws {
+        let fileURL = temporaryFileURL()
+        let persistence = FileEditorPersistence(fileURL: fileURL)
+
+        try persistence.saveText("Saved through missing directories")
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.deletingLastPathComponent().path))
+        XCTAssertEqual(try persistence.loadText(), "Saved through missing directories")
     }
 
     func testEditorModelLoadsAndSavesThroughPersistence() throws {
