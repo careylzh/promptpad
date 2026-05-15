@@ -120,3 +120,14 @@ after each iteration and it's included in prompts for context.
   - Patterns discovered: import mirrors export cleanly when file-type contracts and exact text reading/replacement live in core, while AppKit owns open-panel selection and destructive-replace confirmation.
   - Gotchas encountered: plain `swift test` remains environment-blocked by the user-level Clang module cache, so the repository-local module-cache workaround is still needed here to execute tests.
 ---
+
+## 2026-05-15 - US-010
+- Verified focused core test coverage already exists for missing local document loads, file persistence save/load round trips, Cmd+B Markdown bold behavior with and without selected text, and import replacement through `PromptEditorModel`.
+- Confirmed tests exercise reusable `PromptPadCore` model/service helpers directly without launching the macOS UI.
+- Verified `swift build` passes.
+- Verified tests pass with `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`; plain `swift test` remains blocked in this execution sandbox before manifest compilation because Clang cannot write to `~/.cache/clang/ModuleCache`.
+- Files changed: `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: focused story-level verification can reuse existing core tests when prior iterations already cover the acceptance criteria directly.
+  - Gotchas encountered: the sandbox-level Clang module-cache failure affects plain SwiftPM test startup, not the PromptPadCore test suite itself.
+---

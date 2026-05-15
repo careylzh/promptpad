@@ -1,0 +1,67 @@
+# Iteration 8 Log
+
+## Metadata
+
+- **Task ID**: US-008
+- **Task Title**: Import Markdown or Plain Text
+- **Description**: As a prompt writer, I want to import a `.md` or `.txt` file so that I can replace my single persistent prompt document with existing text.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-05-15T04:18:47.122Z
+- **Ended At**: 2026-05-15T04:20:56.760Z
+- **Duration**: 2m 9s
+- **Input Tokens**: 387891
+- **Output Tokens**: 4898
+- **Total Tokens**: 392789
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll inspect the existing Swift package layout and the progress notes first, then make the smallest app/core split that matches the project’s patterns.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'pwd && rg --files'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+The progress log confirms import should mirror the export pattern: file type contracts and replacement behavior belong in core, while the app target owns `NSOpenPanel` and confirmation UI. I’m reading the current model/view wiring now.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' Sources/PromptPadCore/EditorPersistence.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPad/PromptPadApp.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' Sources/PromptPad/PromptEditorView.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPadCore/PromptEditorModel.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,340p' Tests/PromptPadCoreTests/EditorPersistenceTests.swift"
+I found the existing export path is compact and testable, so I’m adding import as its sibling: core will know supported extensions and exact UTF-8 reading, and the SwiftUI app will handle open panel plus replace confirmation.
+The core tests now cover both `.md` and `.txt` imports and verify the persistent document save path is updated, not just the in-memory editor text. I’m building next to catch any SwiftUI/macOS API issues.
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Sources/PromptPadCore/PromptEditorModel.swift Tests/PromptPadCoreTests/Edi...
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+`swift build` passes. I’m running tests both in the package’s normal form first, then I’ll use the known module-cache workaround if this sandbox blocks SwiftPM before test execution.
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+The normal `swift test` command is blocked by this sandbox before compiling the manifest because Clang cannot write to `~/.cache/clang/ModuleCache`; this matches prior iterations. I’m running the established local cache variant so the actual test suite executes.
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+I tightened the model import path so it reads the selected file, writes the persistent document, then updates visible editor state. That avoids showing replacement text if the persistent save itself fails.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+Build and the executable test run are clean. I’m updating the Ralph progress log now, including the reusable import pattern since it mirrors the export contract split.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPad/PromptPadApp.swift"
+[94m[shell][0m $ /bin/zsh -lc 'git diff --stat'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+Implemented US-008 import support.
+
+Changed:
+- `Sources/PromptPad/PromptPadApp.swift`
+- `Sources/PromptPadCore/PromptEditorModel.swift`
+- `Tests/PromptPadCoreTests/EditorPersistenceTests.swift`
+- `.ralph-tui/progress.md`
+
+Verification:
+- `swift build` passes
+- `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox` passes, 19 tests
+- Plain `swift test` is still blocked by sandbox permissions writing `~/.cache/clang/ModuleCache`, matching prior iterations
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.
