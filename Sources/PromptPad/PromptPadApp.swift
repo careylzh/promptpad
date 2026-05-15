@@ -1,5 +1,7 @@
+import AppKit
 import PromptPadCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 @main
 struct PromptPadApp: App {
@@ -18,6 +20,7 @@ struct PromptPadApp: App {
 
 private struct EditorWindow: View {
     @StateObject private var editor: PromptEditorModel
+    @State private var exportError: ExportError?
 
     init() {
         _editor = StateObject(wrappedValue: Self.makeEditorModel())
@@ -31,6 +34,21 @@ private struct EditorWindow: View {
             VStack(spacing: 0) {
                 HStack {
                     Spacer()
+
+                    Menu {
+                        Button("Markdown...") {
+                            exportCurrentPrompt(as: .markdown)
+                        }
+                        Button("Plain Text...") {
+                            exportCurrentPrompt(as: .plainText)
+                        }
+                    } label: {
+                        Label("Export", systemImage: "square.and.arrow.up")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .help("Export")
+                    .padding(.top, 18)
+                    .padding(.trailing, 10)
 
                     Picker("Editor mode", selection: $editor.displayMode) {
                         ForEach(EditorDisplayMode.allCases) { mode in
@@ -57,6 +75,13 @@ private struct EditorWindow: View {
         .onChange(of: editor.text) {
             try? editor.save()
         }
+        .alert(item: $exportError) { error in
+            Alert(
+                title: Text("Export Failed"),
+                message: Text(error.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
 
     private static func makeEditorModel() -> PromptEditorModel {
@@ -78,6 +103,35 @@ private struct EditorWindow: View {
         } catch {
             preconditionFailure("Unable to resolve Application Support storage: \(error)")
         }
+    }
+
+    private func exportCurrentPrompt(as format: PromptExportFormat) {
+        let panel = NSSavePanel()
+        panel.canCreateDirectories = true
+        panel.isExtensionHidden = false
+        panel.nameFieldStringValue = format.defaultFileName
+        panel.allowedContentTypes = [format.contentType]
+
+        guard panel.runModal() == .OK, let fileURL = panel.url else {
+            return
+        }
+
+        do {
+            try editor.exportText(to: fileURL)
+        } catch {
+            exportError = ExportError(message: error.localizedDescription)
+        }
+    }
+}
+
+private struct ExportError: Identifiable {
+    let id = UUID()
+    let message: String
+}
+
+private extension PromptExportFormat {
+    var contentType: UTType {
+        UTType(filenameExtension: fileExtension) ?? .plainText
     }
 }
 

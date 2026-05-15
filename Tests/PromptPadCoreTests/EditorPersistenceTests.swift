@@ -86,6 +86,43 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(model.text, "# Heading\n\nRaw **markdown**")
     }
 
+    func testExportFormatsUseExpectedFileExtensions() {
+        XCTAssertEqual(PromptExportFormat.markdown.defaultFileName, "prompt.md")
+        XCTAssertEqual(PromptExportFormat.markdown.fileExtension, "md")
+        XCTAssertEqual(PromptExportFormat.plainText.defaultFileName, "prompt.txt")
+        XCTAssertEqual(PromptExportFormat.plainText.fileExtension, "txt")
+    }
+
+    func testEditorModelExportsCurrentTextExactly() throws {
+        let fileURL = temporaryFileURL(fileName: "export.md")
+        let model = PromptEditorModel(
+            text: "# Prompt\n\nUse **this** exactly.\n",
+            persistence: InMemoryEditorPersistence()
+        )
+
+        try model.exportText(to: fileURL)
+
+        XCTAssertEqual(
+            try String(contentsOf: fileURL, encoding: .utf8),
+            "# Prompt\n\nUse **this** exactly.\n"
+        )
+    }
+
+    func testEditorModelExportDoesNotSavePersistentDocument() throws {
+        let persistence = InMemoryEditorPersistence(text: "Persistent draft")
+        let fileURL = temporaryFileURL(fileName: "export.txt")
+        let model = PromptEditorModel(
+            text: "Exported draft",
+            persistence: persistence
+        )
+
+        try model.exportText(to: fileURL)
+
+        XCTAssertNil(persistence.savedText)
+        XCTAssertEqual(persistence.text, "Persistent draft")
+        XCTAssertEqual(try String(contentsOf: fileURL, encoding: .utf8), "Exported draft")
+    }
+
     func testEditorSelectionClampsNegativeValues() {
         let selection = EditorSelection(location: -3, length: -8)
 
@@ -126,10 +163,10 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(model.selection, EditorSelection(location: 6, length: 9))
     }
 
-    private func temporaryFileURL() -> URL {
+    private func temporaryFileURL(fileName: String = "prompt.txt") -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
-            .appendingPathComponent("prompt.txt", isDirectory: false)
+            .appendingPathComponent(fileName, isDirectory: false)
     }
 }
 

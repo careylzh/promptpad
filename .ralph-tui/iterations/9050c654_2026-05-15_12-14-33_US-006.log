@@ -1,0 +1,69 @@
+# Iteration 6 Log
+
+## Metadata
+
+- **Task ID**: US-006
+- **Task Title**: Add Optional Markdown Preview Mode
+- **Description**: As a prompt writer, I want an optional preview mode so that I can inspect common Markdown formatting when needed while keeping editing plaintext-first.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-05-15T04:14:33.494Z
+- **Ended At**: 2026-05-15T04:16:28.100Z
+- **Duration**: 1m 54s
+- **Input Tokens**: 317925
+- **Output Tokens**: 4828
+- **Total Tokens**: 322753
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll first read the project status and target structure so the preview mode lands in the same app/core split the codebase already uses.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc "pwd && rg --files -g '"'!*'"\\.build*' -g '"'!DerivedData'"'"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+The worktree has unrelated Ralph/session artifacts already modified; I’ll leave those alone. Next I’m checking the current editor bridge and core model so the preview toggle doesn’t disturb persistence or raw text handling.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPad/PromptEditorView.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPadCore/PromptEditorModel.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Tests/PromptPadCoreTests/EditorPersistenceTests.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Sources/PromptPad/PromptPadApp.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Sources/PromptPadCore/PromptPadStyle.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Package.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,200p' Sources/PromptPadCore/EditorSelection.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Tests/PromptPadCoreTests/PromptPadStyleTests.swift"
+I found the prior Markdown command pattern in core and the AppKit editor bridge in the app target. I’m going to add display-mode state to `PromptPadCore`, then keep the actual Markdown rendering as a thin SwiftUI view beside the existing editor.
+The initial UI hook is in place: a compact segmented control above the editor surface switches between raw editing and preview without touching the text binding. I’m adding core tests for the default mode and switching contract before building.
+The core tests now cover that edit mode is the default and display-mode changes are presentation-only. I’m running the Swift checks next; if the sandbox hits the same `swift test` limitation documented by prior iterations, I’ll use the known local workaround and report it plainly.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+`swift build` and the sandbox-compatible test command passed. I’m also trying plain `swift test` because this story explicitly calls it out, even though earlier notes flagged a local sandbox issue.
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+Plain `swift test` still fails before compilation because the sandbox cannot write to the user Clang module cache, matching the previous gotcha. The redirected-cache test run passed, so I’m documenting both the implementation and that local test constraint in the Ralph progress log.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Sources/PromptPad/PromptPadApp.swift Sources/PromptPadCore/PromptEditorMod...
+[94m[shell][0m $ /bin/zsh -lc "nl -ba Sources/PromptPad/PromptPadApp.swift | sed -n '20,125p'"
+[94m[shell][0m $ /bin/zsh -lc "nl -ba Sources/PromptPadCore/PromptEditorModel.swift | sed -n '1,90p'"
+[94m[shell][0m $ /bin/zsh -lc "nl -ba Tests/PromptPadCoreTests/EditorPersistenceTests.swift | sed -n '55,95p'"
+[94m[shell][0m $ /bin/zsh -lc 'nl -ba .ralph-tui/progress.md | tail -n 28'
+Implemented US-006.
+
+Changed:
+- [PromptEditorModel.swift](/Users/careylai/Desktop/notepad/Sources/PromptPadCore/PromptEditorModel.swift:4): added testable `EditorDisplayMode`, defaulting to `.edit`.
+- [PromptPadApp.swift](/Users/careylai/Desktop/notepad/Sources/PromptPad/PromptPadApp.swift:31): added compact Edit/Preview segmented switch and Markdown preview rendering.
+- [EditorPersistenceTests.swift](/Users/careylai/Desktop/notepad/Tests/PromptPadCoreTests/EditorPersistenceTests.swift:71): added coverage for default edit mode and non-mutating mode switches.
+- [.ralph-tui/progress.md](/Users/careylai/Desktop/notepad/.ralph-tui/progress.md:82): appended US-006 notes and reusable pattern.
+
+Verification:
+- `swift build` passes.
+- `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox` passes.
+- Plain `swift test` is still blocked by this sandbox’s Clang module-cache write permission before manifest compilation.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.

@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Expose editor command state such as selection through small `PromptPadCore` value types, then keep AppKit bridge synchronization in the app target via SwiftUI bindings.
 - Implement editor text transformations as small `PromptPadCore` command helpers that return updated text and selection, then let the AppKit bridge invoke them from focused editor key events.
 - Keep editor presentation mode state in `PromptPadCore`, while app-target SwiftUI views decide how to render each mode.
+- Keep export format contracts and exact text writing helpers in `PromptPadCore`, while the app target owns native macOS save-panel presentation and selected destination URLs.
 
 ---
 
@@ -90,4 +91,17 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: keep display-mode state in core for testability, and keep platform-specific Markdown rendering in the SwiftUI app target.
   - Gotchas encountered: plain `swift test` can fail before compiling tests when the sandbox cannot write `~/.cache/clang/ModuleCache`; redirecting `CLANG_MODULE_CACHE_PATH` inside `.build` preserves verification in this environment.
+---
+
+## 2026-05-15 - US-007
+- Implemented export of the current editor text as Markdown (`.md`) or plain text (`.txt`) through a native macOS `NSSavePanel`.
+- Added reusable `PromptExportFormat` and `PromptTextExport` core helpers, plus `PromptEditorModel.exportText(to:)`, so exact text export is unit-testable without launching UI.
+- Kept export separate from the local persistent document path and existing single-document autosave flow.
+- Added tests for export filenames/extensions, exact exported contents, and export not invoking the persistent save path.
+- Verified `swift build` passes.
+- Verified tests pass with `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`; plain `swift test` remains blocked in this execution sandbox before manifest compilation because Clang cannot write `~/.cache/clang/ModuleCache`.
+- Files changed: `Sources/PromptPad/PromptPadApp.swift`, `Sources/PromptPadCore/PromptEditorModel.swift`, `Tests/PromptPadCoreTests/EditorPersistenceTests.swift`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: keep export format contracts and exact text writing helpers in core, with the app target responsible for native save-panel presentation and user-selected destination URLs.
+  - Gotchas encountered: `UTType.markdown` is not available in this SDK, so extension-based `UTType(filenameExtension:)` lookup is more portable for save-panel type filtering.
 ---

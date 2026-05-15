@@ -32,6 +32,10 @@ public final class PromptEditorModel: ObservableObject {
         try persistence.saveText(text)
     }
 
+    public func exportText(to fileURL: URL) throws {
+        try PromptTextExport.write(text, to: fileURL)
+    }
+
     public func applyMarkdownBold() {
         let edit = MarkdownBoldEdit.apply(to: text, selection: selection)
         text = edit.text
@@ -54,6 +58,47 @@ public enum EditorDisplayMode: String, CaseIterable, Equatable, Identifiable, Se
         case .preview:
             "Preview"
         }
+    }
+}
+
+public enum PromptExportFormat: String, CaseIterable, Equatable, Identifiable, Sendable {
+    case markdown
+    case plainText
+
+    public var id: String {
+        rawValue
+    }
+
+    public var title: String {
+        switch self {
+        case .markdown:
+            "Markdown"
+        case .plainText:
+            "Plain Text"
+        }
+    }
+
+    public var fileExtension: String {
+        switch self {
+        case .markdown:
+            "md"
+        case .plainText:
+            "txt"
+        }
+    }
+
+    public var defaultFileName: String {
+        "prompt.\(fileExtension)"
+    }
+}
+
+public enum PromptTextExport {
+    public static func write(_ text: String, to fileURL: URL) throws {
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try text.write(to: fileURL, atomically: true, encoding: .utf8)
     }
 }
 
