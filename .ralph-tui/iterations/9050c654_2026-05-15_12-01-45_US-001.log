@@ -1,0 +1,82 @@
+# Iteration 1 Log
+
+## Metadata
+
+- **Task ID**: US-001
+- **Task Title**: Create Native App Shell
+- **Description**: As a prompt writer, I want PromptPad to open directly into one clean editor window so that I can start writing without navigating files, tabs, or sidebars.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-05-15T04:01:45.458Z
+- **Ended At**: 2026-05-15T04:04:07.784Z
+- **Duration**: 2m 22s
+- **Input Tokens**: 591877
+- **Output Tokens**: 4793
+- **Total Tokens**: 596670
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll inspect the Swift package and the Ralph progress notes first, then make the smallest app-shell change that satisfies this story and verify with `swift build` and `swift test`.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'pwd && rg --files'
+The repo is essentially empty aside from task docs and the progress log, so this story needs the initial Swift package/app scaffold rather than a modification to an existing app. I’m reading the PRD now to align the app shape with the intended product.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' tasks/prd.json"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tasks/prd-promptpad-macos-app.md"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' README.md"
+The PRD confirms US-001 is a one-window SwiftUI macOS shell only; persistence and NSTextView bridging come later. I’m going to scaffold a Swift package with an executable app target, a tiny testable design-token module, and one SwiftUI window containing a single large serif `TextEditor`.
+[94m[shell][0m $ /bin/zsh -lc 'swift --version'
+I’m adding four files: the Swift package manifest, the SwiftUI app shell, a small shared style definition, and a focused test for the style contract. This keeps the first story buildable/testable without reaching into the later persistence and AppKit work.
+The initial shell is in place. I’m running the required Swift checks now; if the package executable exposes any macOS SwiftUI API mismatch, I’ll correct that before updating the progress log.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: Another instance of SwiftPM is already running using '/Users/careylai/Desktop/notepad/.build', waiting until that process has finished execution...warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not w][0m
+`swift build` passed. The parallel `swift test` attempt failed before compiling tests because SwiftPM tried to write Clang module cache under `/Users/careylai/.cache`, which is outside this sandbox; I’m rerunning tests with the module cache redirected into `.build`.
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=.build/module-cache swift test'
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+Tests pass when SwiftPM’s own package sandbox is disabled, which is a local sandbox compatibility issue rather than a code failure. I’m checking whether redirecting SwiftPM’s home/cache into the workspace lets the literal `swift test` path run cleanly too.
+[94m[shell][0m $ /bin/zsh -lc 'mkdir -p .build/home .build/clang-module-cache'
+[94m[shell][0m $ /bin/zsh -lc 'env HOME=$PWD/.build/home CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache swift...
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+The code checks are done: build is clean, and tests pass with SwiftPM package sandbox disabled in this restricted environment. I’m updating the Ralph progress log now, including the reusable package split pattern discovered while scaffolding the app.
+I’m going to switch the test from Swift Testing to XCTest to reduce reliance on the newer test plugin path. That should make the package friendlier to plain `swift test` in more macOS environments.
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Package.swift Sources/PromptPad/PromptPadApp.swift Sources/PromptPadCore/P...
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' Sources/PromptPad/PromptPadApp.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Package.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Sources/PromptPadCore/PromptPadStyle.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' .ralph-tui/progress.md"
+Implemented US-001.
+
+Added the native SwiftUI `PromptPad` app shell with one clean editor window, no sidebar/tab/document UI, muted light styling, spacious padding, and large Georgia serif editor text. Also added a `PromptPadCore` target with a small XCTest style contract and updated `.ralph-tui/progress.md`.
+
+Verification:
+- `swift build` passes.
+- Tests pass via `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`.
+- Plain `swift test` is blocked by this execution sandbox before compilation due SwiftPM/Clang cache and `sandbox-exec` permission errors.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.

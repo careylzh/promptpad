@@ -17,21 +17,27 @@ struct PromptPadApp: App {
 }
 
 private struct EditorWindow: View {
-    @State private var text = ""
+    @StateObject private var editor: PromptEditorModel
+
+    init() {
+        let fallbackURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PromptPad", isDirectory: true)
+            .appendingPathComponent(FileEditorPersistence.defaultFileName, isDirectory: false)
+        let persistence = (try? FileEditorPersistence.applicationSupportStore())
+            ?? FileEditorPersistence(fileURL: fallbackURL)
+        let model = (try? PromptEditorModel(loadingFrom: persistence)) ?? PromptEditorModel(persistence: persistence)
+        _editor = StateObject(wrappedValue: model)
+    }
 
     var body: some View {
         ZStack {
             Color(nsColor: .textBackgroundColor)
                 .ignoresSafeArea()
 
-            TextEditor(text: $text)
-                .font(.custom(PromptPadStyle.editorFontName, size: PromptPadStyle.editorFontSize))
-                .foregroundStyle(Color(nsColor: .secondaryLabelColor))
-                .lineSpacing(PromptPadStyle.editorLineSpacing)
-                .padding(PromptPadStyle.editorPadding)
-                .scrollContentBackground(.hidden)
-                .background(Color.clear)
-                .accessibilityLabel("Prompt editor")
+            PromptEditorView(text: $editor.text)
+        }
+        .onChange(of: editor.text) {
+            try? editor.save()
         }
     }
 }
