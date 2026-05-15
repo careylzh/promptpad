@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - Keep the SwiftUI macOS executable target (`PromptPad`) thin and place reusable, testable constants or editor logic in the `PromptPadCore` library target so `swift test` can validate behavior without launching UI.
 - Define editor state and persistence contracts in `PromptPadCore`; let the app target choose the concrete platform storage location and keep SwiftUI/AppKit editor rendering in app-target views.
 - Resolve platform-specific storage roots in the app target, then use `PromptPadCore` helpers for deterministic document URLs and file persistence behavior that can be unit tested.
+- Expose editor command state such as selection through small `PromptPadCore` value types, then keep AppKit bridge synchronization in the app target via SwiftUI bindings.
 
 ---
 
@@ -48,4 +49,17 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: app-target storage resolution plus core URL/persistence helpers keeps platform details thin while preserving unit coverage for the single-document path and directory creation behavior.
   - Gotchas encountered: avoid falling back to temporary storage for a user document because it can satisfy local writes while violating the explicit Application Support persistence contract.
+---
+
+## 2026-05-15 - US-004
+- Replaced the SwiftUI `TextEditor` implementation with an `NSTextView` bridge hosted inside SwiftUI.
+- Configured the editor for raw plaintext editing, undo, no rich text or graphics imports, disabled automatic Markdown-corrupting substitutions, readable serif typography, padded minimal chrome, and initial first-responder focus.
+- Added reusable `EditorSelection` state to `PromptPadCore` and synchronized it from the AppKit text view so editor commands can access the current selection.
+- Added unit coverage for editor selection state and clamping behavior.
+- Verified `swift build` passes.
+- Verified tests pass with `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`; plain `swift test` remains blocked in this execution sandbox by SwiftPM/Clang cache permissions before test compilation.
+- Files changed: `Sources/PromptPad/PromptEditorView.swift`, `Sources/PromptPad/PromptPadApp.swift`, `Sources/PromptPadCore/EditorSelection.swift`, `Sources/PromptPadCore/PromptEditorModel.swift`, `Tests/PromptPadCoreTests/EditorPersistenceTests.swift`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: expose selection as a small core value type and let the AppKit bridge map `NSTextView.selectedRange()` into the model through bindings.
+  - Gotchas encountered: Swift 6 requires immutable shared core value types used in static constants to conform to `Sendable`, and AppKit sizing constants sometimes need explicit `CGFloat` qualification.
 ---

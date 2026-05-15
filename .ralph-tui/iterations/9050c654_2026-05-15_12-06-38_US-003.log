@@ -1,0 +1,81 @@
+# Iteration 3 Log
+
+## Metadata
+
+- **Task ID**: US-003
+- **Task Title**: Persist Single Local Document
+- **Description**: As a prompt writer, I want my writing to automatically persist locally so that quitting and reopening the app restores my last prompt.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-05-15T04:06:38.956Z
+- **Ended At**: 2026-05-15T04:09:08.421Z
+- **Duration**: 2m 29s
+- **Input Tokens**: 459260
+- **Output Tokens**: 6094
+- **Total Tokens**: 465354
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll inspect the existing package structure, app/core split, and the Ralph progress notes first so the persistence work lands in the intended target.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'pwd && rg --files'
+[94m[shell][0m $ /bin/zsh -lc "find . -maxdepth 3 -type f \\( -name 'Package.swift' -o -name '*.swift' \\) -print"
+The repo already has the core persistence shape from US-002, so I’m checking whether US-003 is mostly wiring the concrete Application Support location plus tests/docs rather than inventing new storage behavior.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Package.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPadCore/EditorPersistence.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' Sources/PromptPad/PromptPadApp.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPadCore/PromptEditorModel.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' Sources/PromptPad/PromptEditorView.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Tests/PromptPadCoreTests/EditorPersistenceTests.swift"
+I found the main gap: the app currently falls back to a temporary file if resolving Application Support fails. That weakens the story’s storage contract, so I’m going to make the Application Support document path explicit and remove the temp fallback while keeping the reusable URL/file behavior testable in `PromptPadCore`.
+The storage wiring now resolves the user Application Support directory in the app shell, then uses core’s document-path contract and file persistence. I’m adding focused core tests for the document path and nested directory creation before running the Swift checks.
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Sources/PromptPadCore/EditorPersistence.swift Sources/PromptPad/PromptPadA...
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: Another instance of SwiftPM (PID: 5347) is already running using '/Users/careylai/Desktop/notepad/.build', waiting until that process has finished execution...warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessi][0m
+`swift build` passes. The plain `swift test` invocation hit the same sandboxed Clang module-cache permission issue recorded in earlier iterations, so I’m rerunning tests with the repo-local module cache workaround from the progress log and without SwiftPM’s package sandbox.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+The focused test run passes with 6 tests. I’m updating the Ralph progress log now, including the reusable pattern that the app shell resolves platform storage while core owns the deterministic document URL and file persistence behavior.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Sources/PromptPad/PromptPadApp.swift Sources/PromptPadCore/EditorPersisten...
+One more cleanup: after moving storage-root resolution into the app target, the old core convenience that also resolved Application Support is now dead code and conflicts with the pattern. I’m removing it so `PromptPadCore` only owns the document URL shape and file read/write behavior.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' Sources/PromptPadCore/EditorPersistence.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,180p' Sources/PromptPad/PromptPadApp.swift"
+[94m[shell][0m $ /bin/zsh -lc 'git diff --stat'
+The implementation is in place and checks are green with the known sandbox workaround. I’m doing one last non-parallel `swift test` variant with only the local module-cache override to separate code health from SwiftPM sandbox behavior.
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test'
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- Sources/PromptPadCore/EditorPersistence.swift Sources/PromptPad/PromptPadA...
+Implemented US-003.
+
+Changed:
+- App now resolves `Application Support` and stores `PromptPad/prompt.txt` there.
+- Removed temp-file fallback.
+- Added core `PromptPadDocumentStore` URL contract.
+- Added tests for document path and missing-directory creation.
+- Updated `.ralph-tui/progress.md` with learnings.
+
+Verification:
+- `swift build` passes.
+- Tests pass with the existing sandbox workaround:
+  `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`
+
+Plain `swift test` still hits this environment’s `sandbox-exec` permission issue, though the test suite itself executes successfully.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.

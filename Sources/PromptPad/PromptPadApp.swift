@@ -28,7 +28,7 @@ private struct EditorWindow: View {
             Color(nsColor: .textBackgroundColor)
                 .ignoresSafeArea()
 
-            PromptEditorView(text: $editor.text)
+            PromptEditorView(text: $editor.text, selection: $editor.selection)
         }
         .onChange(of: editor.text) {
             try? editor.save()

@@ -3,11 +3,17 @@ import Foundation
 
 public final class PromptEditorModel: ObservableObject {
     @Published public var text: String
+    @Published public var selection: EditorSelection
 
     private let persistence: EditorPersistence
 
-    public init(text: String = "", persistence: EditorPersistence) {
+    public init(
+        text: String = "",
+        selection: EditorSelection = .zero,
+        persistence: EditorPersistence
+    ) {
         self.text = text
+        self.selection = selection
         self.persistence = persistence
     }
 

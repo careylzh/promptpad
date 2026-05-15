@@ -53,6 +53,27 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(persistence.savedText, "Updated draft")
     }
 
+    func testEditorModelExposesSelectionState() {
+        let persistence = InMemoryEditorPersistence()
+        let model = PromptEditorModel(
+            text: "Select **markdown**",
+            selection: EditorSelection(location: 7, length: 10),
+            persistence: persistence
+        )
+
+        XCTAssertEqual(model.selection, EditorSelection(location: 7, length: 10))
+
+        model.selection = EditorSelection(location: 0, length: 6)
+
+        XCTAssertEqual(model.selection, EditorSelection(location: 0, length: 6))
+    }
+
+    func testEditorSelectionClampsNegativeValues() {
+        let selection = EditorSelection(location: -3, length: -8)
+
+        XCTAssertEqual(selection, .zero)
+    }
+
     private func temporaryFileURL() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
