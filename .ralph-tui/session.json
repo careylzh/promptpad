@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "sessionId": "9050c654-2693-4ca2-bfeb-bb607acf3b75",
+  "status": "running",
+  "startedAt": "2026-05-15T04:01:43.209Z",
+  "updatedAt": "2026-05-15T04:04:07.785Z",
+  "currentIteration": 0,
+  "maxIterations": 10,
+  "tasksCompleted": 0,
+  "isPaused": false,
+  "agentPlugin": "codex",
+  "trackerState": {
+    "plugin": "json",
+    "prdPath": "./tasks/prd.json",
+    "totalTasks": 10,
+    "tasks": [
+      {
+        "id": "US-001",
+        "title": "Create Native App Shell",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-002",
+        "title": "Implement Reusable Editor Core",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-003",
+        "title": "Persist Single Local Document",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-004",
+        "title": "Build NSTextView-Based Editor",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-005",
+        "title": "Implement Cmd+B Markdown Bold",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-006",
+        "title": "Add Optional Markdown Preview Mode",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-007",
+        "title": "Export Text as Markdown or Plain Text",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-008",
+        "title": "Import Markdown or Plain Text",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-009",
+        "title": "Add Build, Run, and DMG Packaging Scripts",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-010",
+        "title": "Add Focused Tests",
+        "status": "open",
+        "completedInSession": false
+      }
+    ]
+  },
+  "iterations": [],
+  "skippedTaskIds": [],
+  "cwd": "/Users/careylai/Desktop/notepad",
+  "activeTaskIds": [],
+  "subagentPanelVisible": false
+}
