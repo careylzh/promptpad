@@ -13,6 +13,7 @@ after each iteration and it's included in prompts for context.
 - Keep editor presentation mode state in `PromptPadCore`, while app-target SwiftUI views decide how to render each mode.
 - Keep export format contracts and exact text writing helpers in `PromptPadCore`, while the app target owns native macOS save-panel presentation and selected destination URLs.
 - Keep import format contracts and exact text reading/replacement helpers in `PromptPadCore`, while the app target owns native macOS open-panel presentation and destructive-replace confirmation.
+- Package the SwiftPM macOS executable by staging the release binary into a minimal `.app` bundle in a script, then produce distributable artifacts from ignored `dist/` output.
 
 ---
 
@@ -130,4 +131,19 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: focused story-level verification can reuse existing core tests when prior iterations already cover the acceptance criteria directly.
   - Gotchas encountered: the sandbox-level Clang module-cache failure affects plain SwiftPM test startup, not the PromptPadCore test suite itself.
+---
+
+## 2026-05-15 - US-009
+- Added README terminal instructions for building, testing, running, and creating a DMG package.
+- Added `scripts/package-dmg.sh` to build the release SwiftPM executable, stage `PromptPad.app`, and create `dist/PromptPad.dmg` with macOS `hdiutil`, using a repository-local Clang module cache and SwiftPM's `--disable-sandbox` flag for the internal release build.
+- Added a `hdiutil makehybrid` fallback for environments that cannot create compressed UDZO disk images.
+- Added `dist/` to `.gitignore` for generated packaging artifacts.
+- Verified `swift build` passes.
+- Verified tests pass with `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`.
+- Verified `./scripts/package-dmg.sh` runs successfully on macOS in this sandbox and produces `dist/PromptPad.dmg` containing the staged `PromptPad.app`.
+- Verified `bash -n scripts/package-dmg.sh` passes.
+- Files changed: `README.md`, `scripts/package-dmg.sh`, `.gitignore`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: SwiftPM app distribution can stay outside app-target code by staging the release executable into a minimal scripted `.app` bundle and keeping generated artifacts under ignored `dist/`.
+  - Gotchas encountered: DMG creation is macOS-specific and depends on the system `hdiutil`; `swift build --show-bin-path` only resolves the products directory, so the script must run the release build before staging the executable. This sandbox also blocks the default user-level Clang module cache and SwiftPM manifest sandbox, so the script needs a repo-local default cache path and `--disable-sandbox` for its internal SwiftPM build. Some restricted macOS environments report `Device not configured` for compressed `hdiutil create`, while `hdiutil makehybrid` can still produce a usable `.dmg` artifact from the staged app.
 ---

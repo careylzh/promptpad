@@ -1,0 +1,55 @@
+# Iteration 9 Log
+
+## Metadata
+
+- **Task ID**: US-010
+- **Task Title**: Add Focused Tests
+- **Description**: As a developer, I want tests around reusable editor behavior so that persistence and Markdown commands remain reliable.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-05-15T04:20:57.883Z
+- **Ended At**: 2026-05-15T04:22:30.334Z
+- **Duration**: 1m 32s
+- **Input Tokens**: 173438
+- **Output Tokens**: 1886
+- **Total Tokens**: 175324
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll inspect the package layout, existing core helpers, and the Ralph progress notes first so the tests land in the same style as the rest of the project.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'pwd && rg --files'
+[94m[shell][0m $ /bin/zsh -lc "find . -maxdepth 3 -type f \\( -name 'Package.swift' -o -name '*.swift' \\) -print"
+The repo already has core tests from prior stories, so I’m checking whether US-010 is just a coverage pass or whether there are gaps around the exact acceptance criteria.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' Sources/PromptPadCore/PromptEditorModel.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' Sources/PromptPadCore/EditorPersistence.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' Tests/PromptPadCoreTests/EditorPersistenceTests.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,200p' Tests/PromptPadCoreTests/PromptPadStyleTests.swift"
+The existing core test file already exercises missing-file loads, save/load, bold with and without selection, and import replacement through `PromptEditorModel`. I’m running the requested checks before deciding whether any small test naming/coverage cleanup is warranted.
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+`swift build` and the repository-local-cache `swift test --disable-sandbox` both pass. I’m also checking plain `swift test` because the acceptance criteria call it out, though prior progress notes mention this sandbox can block it before test compilation.
+[94m[shell][0m $ /bin/zsh -lc 'swift test'
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+Plain `swift test` is still blocked by the environment’s denied write to `~/.cache/clang/ModuleCache`, matching the earlier notes. The actual tests pass with `CLANG_MODULE_CACHE_PATH` redirected into the workspace, so I’m recording US-010 as a focused verification story rather than changing already-covered core logic.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- .ralph-tui/progress.md'
+US-010 was already covered by existing `PromptPadCore` tests, so I verified the acceptance criteria and documented the iteration in `.ralph-tui/progress.md`.
+
+Checks:
+- `swift build` passes.
+- `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox` passes: 19 tests.
+- Plain `swift test` is still blocked by this sandbox’s denied write to `~/.cache/clang/ModuleCache`, before test compilation.
+
+I only changed `.ralph-tui/progress.md`.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.

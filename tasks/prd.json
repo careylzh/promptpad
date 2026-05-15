@@ -193,10 +193,11 @@
         "The `.dmg` packaging script runs successfully on macOS."
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-010",
@@ -224,6 +225,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-05-15T04:22:30.334Z"
+    "updatedAt": "2026-05-15T04:26:06.254Z"
   }
 }
