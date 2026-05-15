@@ -93,6 +93,11 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(PromptExportFormat.plainText.fileExtension, "txt")
     }
 
+    func testImportFormatsUseExpectedFileExtensions() {
+        XCTAssertEqual(PromptImportFormat.markdown.fileExtension, "md")
+        XCTAssertEqual(PromptImportFormat.plainText.fileExtension, "txt")
+    }
+
     func testEditorModelExportsCurrentTextExactly() throws {
         let fileURL = temporaryFileURL(fileName: "export.md")
         let model = PromptEditorModel(
@@ -121,6 +126,37 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertNil(persistence.savedText)
         XCTAssertEqual(persistence.text, "Persistent draft")
         XCTAssertEqual(try String(contentsOf: fileURL, encoding: .utf8), "Exported draft")
+    }
+
+    func testEditorModelImportsMarkdownAndPersistsReplacement() throws {
+        let fileURL = temporaryFileURL(fileName: "import.md")
+        try PromptTextExport.write("# Imported\n\nMarkdown body\n", to: fileURL)
+        let persistence = InMemoryEditorPersistence(text: "Existing draft")
+        let model = PromptEditorModel(
+            text: "Existing draft",
+            persistence: persistence
+        )
+
+        try model.importText(from: fileURL)
+
+        XCTAssertEqual(model.text, "# Imported\n\nMarkdown body\n")
+        XCTAssertEqual(persistence.savedText, "# Imported\n\nMarkdown body\n")
+        XCTAssertEqual(persistence.text, "# Imported\n\nMarkdown body\n")
+    }
+
+    func testEditorModelImportsPlainTextAndPersistsReplacement() throws {
+        let fileURL = temporaryFileURL(fileName: "import.txt")
+        try PromptTextExport.write("Imported plain text\nSecond line", to: fileURL)
+        let persistence = InMemoryEditorPersistence(text: "# Existing")
+        let model = PromptEditorModel(
+            text: "# Existing",
+            persistence: persistence
+        )
+
+        try model.importText(from: fileURL)
+
+        XCTAssertEqual(model.text, "Imported plain text\nSecond line")
+        XCTAssertEqual(persistence.savedText, "Imported plain text\nSecond line")
     }
 
     func testEditorSelectionClampsNegativeValues() {

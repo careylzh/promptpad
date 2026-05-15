@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - Implement editor text transformations as small `PromptPadCore` command helpers that return updated text and selection, then let the AppKit bridge invoke them from focused editor key events.
 - Keep editor presentation mode state in `PromptPadCore`, while app-target SwiftUI views decide how to render each mode.
 - Keep export format contracts and exact text writing helpers in `PromptPadCore`, while the app target owns native macOS save-panel presentation and selected destination URLs.
+- Keep import format contracts and exact text reading/replacement helpers in `PromptPadCore`, while the app target owns native macOS open-panel presentation and destructive-replace confirmation.
 
 ---
 
@@ -104,4 +105,18 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: keep export format contracts and exact text writing helpers in core, with the app target responsible for native save-panel presentation and user-selected destination URLs.
   - Gotchas encountered: `UTType.markdown` is not available in this SDK, so extension-based `UTType(filenameExtension:)` lookup is more portable for save-panel type filtering.
+---
+
+## 2026-05-15 - US-008
+- Implemented import of Markdown (`.md`) and plain text (`.txt`) files through a native macOS `NSOpenPanel`.
+- Added replacement confirmation before importing over existing non-empty editor text.
+- Added reusable `PromptImportFormat`, `PromptTextImport`, and `PromptEditorModel.importText(from:)` core helpers so imported text replaces the single persistent prompt document and is unit-testable.
+- Kept import in the existing single editor window without tabs, sidebars, or multi-document state.
+- Added tests for supported import extensions and for Markdown/plain-text imports persisting the replacement document.
+- Verified `swift build` passes.
+- Verified tests pass with `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox`; plain `swift test` is still blocked in this sandbox before manifest compilation because Clang cannot write `~/.cache/clang/ModuleCache`.
+- Files changed: `Sources/PromptPad/PromptPadApp.swift`, `Sources/PromptPadCore/PromptEditorModel.swift`, `Tests/PromptPadCoreTests/EditorPersistenceTests.swift`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: import mirrors export cleanly when file-type contracts and exact text reading/replacement live in core, while AppKit owns open-panel selection and destructive-replace confirmation.
+  - Gotchas encountered: plain `swift test` remains environment-blocked by the user-level Clang module cache, so the repository-local module-cache workaround is still needed here to execute tests.
 ---

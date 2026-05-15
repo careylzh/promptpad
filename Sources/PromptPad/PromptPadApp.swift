@@ -21,6 +21,9 @@ struct PromptPadApp: App {
 private struct EditorWindow: View {
     @StateObject private var editor: PromptEditorModel
     @State private var exportError: ExportError?
+    @State private var importError: ImportError?
+    @State private var pendingImportURL: URL?
+    @State private var isConfirmingImport = false
 
     init() {
         _editor = StateObject(wrappedValue: Self.makeEditorModel())
@@ -34,6 +37,16 @@ private struct EditorWindow: View {
             VStack(spacing: 0) {
                 HStack {
                     Spacer()
+
+                    Button {
+                        choosePromptToImport()
+                    } label: {
+                        Label("Import", systemImage: "square.and.arrow.down")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Import")
+                    .padding(.top, 18)
+                    .padding(.trailing, 10)
 
                     Menu {
                         Button("Markdown...") {
@@ -82,6 +95,24 @@ private struct EditorWindow: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+        .alert("Replace Current Prompt?", isPresented: $isConfirmingImport, presenting: pendingImportURL) { fileURL in
+            Button("Cancel", role: .cancel) {
+                pendingImportURL = nil
+            }
+            Button("Replace", role: .destructive) {
+                importPrompt(from: fileURL)
+                pendingImportURL = nil
+            }
+        } message: { _ in
+            Text("Importing this file will replace the current prompt.")
+        }
+        .alert(item: $importError) { error in
+            Alert(
+                title: Text("Import Failed"),
+                message: Text(error.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
 
     private static func makeEditorModel() -> PromptEditorModel {
@@ -122,6 +153,35 @@ private struct EditorWindow: View {
             exportError = ExportError(message: error.localizedDescription)
         }
     }
+
+    private func choosePromptToImport() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = PromptImportFormat.allCases.map(\.contentType)
+
+        guard panel.runModal() == .OK, let fileURL = panel.url else {
+            return
+        }
+
+        if editor.text.isEmpty {
+            importPrompt(from: fileURL)
+        } else {
+            pendingImportURL = fileURL
+            isConfirmingImport = true
+        }
+    }
+
+    private func importPrompt(from fileURL: URL) {
+        do {
+            try editor.importText(from: fileURL)
+            editor.selection = .zero
+            editor.displayMode = .edit
+        } catch {
+            importError = ImportError(message: error.localizedDescription)
+        }
+    }
 }
 
 private struct ExportError: Identifiable {
@@ -129,7 +189,18 @@ private struct ExportError: Identifiable {
     let message: String
 }
 
+private struct ImportError: Identifiable {
+    let id = UUID()
+    let message: String
+}
+
 private extension PromptExportFormat {
+    var contentType: UTType {
+        UTType(filenameExtension: fileExtension) ?? .plainText
+    }
+}
+
+private extension PromptImportFormat {
     var contentType: UTType {
         UTType(filenameExtension: fileExtension) ?? .plainText
     }
