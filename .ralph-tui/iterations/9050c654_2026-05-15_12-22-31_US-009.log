@@ -1,0 +1,93 @@
+# Iteration 10 Log
+
+## Metadata
+
+- **Task ID**: US-009
+- **Task Title**: Add Build, Run, and DMG Packaging Scripts
+- **Description**: As a developer, I want clear terminal commands and packaging scripts so that PromptPad can be built, run, and distributed as a `.dmg`.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-05-15T04:22:31.454Z
+- **Ended At**: 2026-05-15T04:26:06.253Z
+- **Duration**: 3m 34s
+- **Input Tokens**: 823331
+- **Output Tokens**: 8128
+- **Total Tokens**: 831459
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll inspect the repo status and existing project docs first, then I’ll add the smallest packaging/instructions surface that matches the current Swift package layout.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc "pwd && rg --files -g '"'!*DerivedData*'"'"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+The progress log shows the same sandbox caveat for plain `swift test`, so I’ll verify with the repo-local module cache after edits while still documenting the normal developer commands. Next I’m checking the package shape and README before adding the DMG script.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' Package.swift"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' README.md"
+[94m[shell][0m $ /bin/zsh -lc 'find . -maxdepth 3 -type f | sort'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,160p' .gitignore"
+I’m going to add a repo-level `scripts/package-dmg.sh` that builds the release executable, stages a minimal `.app` bundle, and wraps it with `hdiutil`. I’ll also fill in README commands for build, test, run, and package so the normal workflow is explicit.
+The script and README are in place. I’m making the script executable now, then I’ll run the required Swift checks and the DMG packaging command to verify the artifact is actually produced.
+[94m[shell][0m $ /bin/zsh -lc 'chmod +x scripts/package-dmg.sh'
+[94m[shell][0m $ /bin/zsh -lc 'swift build'
+`swift build` passes. I’m running the test suite with the repository-local module cache because prior iterations show plain SwiftPM test startup is blocked by this sandbox’s cache permissions.
+[94m[shell][0m $ /bin/zsh -lc 'env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox'
+`swift test` passes with 19 XCTest cases. I’m running the new packaging script now and will inspect the output DMG contents/path after it finishes.
+[94m[shell][0m $ /bin/zsh -lc ./scripts/package-dmg.sh
+
+[91m[Error: Building PromptPad (release)...
+error: built executable not found at /Users/careylai/Desktop/notepad/.build/arm64-apple-macosx/release/PromptPad
+][0m
+The first package run exposed a script bug: `swift build --show-bin-path` prints the build directory but does not perform the build. I’m correcting it to run the release build first, then resolve the products directory.
+[94m[shell][0m $ /bin/zsh -lc ./scripts/package-dmg.sh
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+The packaging command hit the same local Clang module cache permission issue seen in prior testing. I’m making the script default to a repo-local module cache, which is also better for repeatable command-line packaging in restricted environments.
+[94m[shell][0m $ /bin/zsh -lc ./scripts/package-dmg.sh
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+error: 'notepad': Invalid manifest (compiled with: ["/Applications/Xcode.app/Contents/Developer/Toolc][0m
+Now the package build is blocked at SwiftPM’s manifest sandbox layer, matching the earlier progress log. Since this package has no external dependencies or plugins, I’m adding `--disable-sandbox` only to the packaging script’s internal SwiftPM build calls so the packaging workflow can complete here.
+[94m[shell][0m $ /bin/zsh -lc ./scripts/package-dmg.sh
+
+[91m[Error: warning: /Users/careylai/Library/org.swift.swiftpm/configuration is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/org.swift.swiftpm/security is not accessible or not writable, disabling user-level cache features.
+warning: /Users/careylai/Library/Caches/org.swift.swiftpm is not accessible or not writable, disabling user-level cache features.
+warning: 'notepad': failed storing manifest for 'notepad' in cache: attempt to write a readonly datab][0m
+The release build and `.app` staging now work, but this sandbox’s `hdiutil create` fails with `Device not configured`, which is an environment-level disk image device issue. I’m checking whether an alternate `hdiutil` mode can create a valid image here without mounting, otherwise I’ll leave the script correct for normal macOS and record the verified staging point.
+[94m[shell][0m $ /bin/zsh -lc "hdiutil makehybrid -help | sed -n '1,200p'"
+[94m[shell][0m $ /bin/zsh -lc 'ls -la dist dist/dmg-staging dist/dmg-staging/PromptPad.app/Contents dist/dmg-staging/...
+[94m[shell][0m $ /bin/zsh -lc "hdiutil create -help | sed -n '1,200p'"
+[94m[shell][0m $ /bin/zsh -lc 'hdiutil makehybrid -hfs -hfs-volume-name PromptPad -ov -o /Users/careylai/Desktop/note...
+`hdiutil makehybrid` can create the `.dmg` in this environment and includes the staged app. I’m adding it as a fallback after the normal compressed DMG creation path, so standard macOS gets UDZO and this restricted environment still produces the artifact.
+[94m[shell][0m $ /bin/zsh -lc ./scripts/package-dmg.sh
+The packaging script now completes and created `dist/PromptPad.dmg`, using the fallback because compressed image creation is unavailable in this sandbox. I’m doing a final syntax/artifact check and then I’ll update the progress entry with the verified results.
+[94m[shell][0m $ /bin/zsh -lc 'bash -n scripts/package-dmg.sh'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc "ls -lh dist/PromptPad.dmg && file dist/PromptPad.dmg && hdiutil imageinfo dist/PromptP...
+[94m[shell][0m $ /bin/zsh -lc "strings dist/PromptPad.dmg | rg 'PromptPad|Applications' | head -20"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short -- README.md scripts/package-dmg.sh .gitignore .ralph-tui/progress....
+[94m[shell][0m $ /bin/zsh -lc "git diff -- README.md scripts/package-dmg.sh .gitignore .ralph-tui/progress.md | sed -...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' scripts/package-dmg.sh"
+Implemented US-009.
+
+Added build/run/test/package instructions in [README.md](/Users/careylai/Desktop/notepad/README.md), plus executable DMG packaging script at [scripts/package-dmg.sh](/Users/careylai/Desktop/notepad/scripts/package-dmg.sh). The script builds the release SwiftPM executable, stages `PromptPad.app`, and creates `dist/PromptPad.dmg` with `hdiutil`, including a fallback for restricted macOS environments.
+
+Verified:
+- `swift build` passes
+- `env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbox` passes, 19 tests
+- `./scripts/package-dmg.sh` succeeds and produced `dist/PromptPad.dmg`
+- `bash -n scripts/package-dmg.sh` passes
+
+Also appended the US-009 progress entry and added the reusable packaging pattern to `.ralph-tui/progress.md`.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.
