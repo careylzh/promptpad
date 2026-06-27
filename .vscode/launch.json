@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:promptPad}",
+            "name": "Debug PromptPad",
+            "target": "PromptPad",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug PromptPad"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:promptPad}",
+            "name": "Release PromptPad",
+            "target": "PromptPad",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release PromptPad"
+        }
+    ]
+}
