@@ -45,6 +45,21 @@ env CLANG_MODULE_CACHE_PATH=$PWD/.build/module-cache swift test --disable-sandbo
 swift run PromptPad
 ```
 
+## Build Unsigned App
+
+Build a release executable and generate `dist/PromptPad.app` without a paid
+Developer ID certificate:
+
+```sh
+./scripts/build-app.sh
+```
+
+Set `CONFIGURATION=debug` to generate a debug app bundle instead.
+
+The script applies the ad-hoc signature required to launch arm64 executables on
+macOS. This is a local signature only; the app is not Developer ID signed or
+notarized for public distribution.
+
 ## Package DMG
 
 Build a release executable, stage `PromptPad.app`, and create `dist/PromptPad.dmg`:
