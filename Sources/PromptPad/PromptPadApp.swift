@@ -80,7 +80,7 @@ private struct EditorWindow: View {
                     case .edit:
                         PromptEditorView(text: $editor.text, selection: $editor.selection)
                     case .preview:
-                        MarkdownPreviewView(markdown: editor.text)
+                        StructuredMarkdownPreviewView(markdown: editor.text)
                     }
                 }
             }

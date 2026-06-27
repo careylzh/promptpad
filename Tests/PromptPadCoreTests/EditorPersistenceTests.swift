@@ -3,6 +3,18 @@ import XCTest
 @testable import PromptPadCore
 
 final class EditorPersistenceTests: XCTestCase {
+    func testMarkdownPreviewUsesTwoEmptyLinesAsDivider() {
+        let content = MarkdownPreviewContent(markdown: "First\n\n\nSecond")
+
+        XCTAssertEqual(content.blocks, [.markdown("First"), .divider, .markdown("Second")])
+    }
+
+    func testMarkdownPreviewPreservesOneEmptyLine() {
+        let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
+
+        XCTAssertEqual(content.blocks, [.markdown("First\n\nSecond")])
+    }
+
     func testDocumentStoreBuildsApplicationSupportDocumentURL() {
         let supportDirectory = URL(fileURLWithPath: "/Users/example/Library/Application Support")
 
