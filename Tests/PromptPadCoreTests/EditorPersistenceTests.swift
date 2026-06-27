@@ -15,6 +15,38 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(content.blocks, [.markdown("First\n\nSecond")])
     }
 
+    func testMarkdownPreviewParsesPipeTable() {
+        let content = MarkdownPreviewContent(markdown: """
+        Intro
+        | Name | Role |
+        | --- | :---: |
+        | Ada | Engineer |
+        | Lin | Designer |
+        Outro
+        """)
+
+        XCTAssertEqual(content.blocks, [
+            .markdown("Intro"),
+            .table(MarkdownPreviewTable(
+                headers: ["Name", "Role"],
+                rows: [["Ada", "Engineer"], ["Lin", "Designer"]]
+            )),
+            .markdown("Outro")
+        ])
+    }
+
+    func testMarkdownPreviewPadsMissingTableCells() {
+        let content = MarkdownPreviewContent(markdown: """
+        A | B | C
+        --- | --- | ---
+        1 | 2
+        """)
+
+        XCTAssertEqual(content.blocks, [
+            .table(MarkdownPreviewTable(headers: ["A", "B", "C"], rows: [["1", "2", ""]]))
+        ])
+    }
+
     func testDocumentStoreBuildsApplicationSupportDocumentURL() {
         let supportDirectory = URL(fileURLWithPath: "/Users/example/Library/Application Support")
 

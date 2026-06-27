@@ -14,6 +14,8 @@ struct StructuredMarkdownPreviewView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     case .divider:
                         Divider()
+                    case .table(let table):
+                        tableView(table)
                     }
                 }
             }
@@ -35,5 +37,27 @@ struct StructuredMarkdownPreviewView: View {
             markdown: source,
             options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .full)
         )) ?? AttributedString(source)
+    }
+
+    private func tableView(_ table: MarkdownPreviewTable) -> some View {
+        ScrollView(.horizontal) {
+            Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 10) {
+                GridRow {
+                    ForEach(Array(table.headers.enumerated()), id: \.offset) { _, header in
+                        Text(renderedMarkdown(from: header))
+                            .fontWeight(.semibold)
+                    }
+                }
+                Divider().gridCellColumns(table.headers.count)
+                ForEach(Array(table.rows.enumerated()), id: \.offset) { _, row in
+                    GridRow {
+                        ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
+                            Text(renderedMarkdown(from: cell))
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
     }
 }

@@ -3,6 +3,17 @@ import Foundation
 public enum MarkdownPreviewBlock: Equatable, Sendable {
     case markdown(String)
     case divider
+    case table(MarkdownPreviewTable)
+}
+
+public struct MarkdownPreviewTable: Equatable, Sendable {
+    public let headers: [String]
+    public let rows: [[String]]
+
+    public init(headers: [String], rows: [[String]]) {
+        self.headers = headers
+        self.rows = rows
+    }
 }
 
 public struct MarkdownPreviewContent: Equatable, Sendable {
@@ -14,13 +25,13 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
             .replacingOccurrences(of: "\r", with: "\n")
         let lines = normalized.split(separator: "\n", omittingEmptySubsequences: false)
 
-        var blocks: [MarkdownPreviewBlock] = []
+        var rawBlocks: [MarkdownPreviewBlock] = []
         var paragraphLines: [Substring] = []
         var emptyLineCount = 0
 
         func appendParagraph() {
             guard !paragraphLines.isEmpty else { return }
-            blocks.append(.markdown(paragraphLines.map(String.init).joined(separator: "\n")))
+            rawBlocks.append(.markdown(paragraphLines.map(String.init).joined(separator: "\n")))
             paragraphLines.removeAll(keepingCapacity: true)
         }
 
@@ -32,7 +43,7 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
 
             if emptyLineCount >= 2 {
                 appendParagraph()
-                blocks.append(.divider)
+                rawBlocks.append(.divider)
             } else if emptyLineCount == 1, !paragraphLines.isEmpty {
                 paragraphLines.append("")
             }
@@ -42,6 +53,68 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
         }
 
         appendParagraph()
-        self.blocks = blocks
+        self.blocks = rawBlocks.flatMap { block in
+            guard case .markdown(let source) = block else { return [block] }
+            return Self.extractTables(from: source)
+        }
+    }
+
+    private static func extractTables(from source: String) -> [MarkdownPreviewBlock] {
+        let lines = source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var blocks: [MarkdownPreviewBlock] = []
+        var markdownLines: [String] = []
+        var index = 0
+
+        func appendMarkdown() {
+            guard !markdownLines.isEmpty else { return }
+            blocks.append(.markdown(markdownLines.joined(separator: "\n")))
+            markdownLines.removeAll(keepingCapacity: true)
+        }
+
+        while index < lines.count {
+            guard index + 1 < lines.count,
+                  let headers = cells(in: lines[index]),
+                  let separators = cells(in: lines[index + 1]),
+                  headers.count == separators.count,
+                  separators.allSatisfy(isTableSeparator) else {
+                markdownLines.append(lines[index])
+                index += 1
+                continue
+            }
+
+            appendMarkdown()
+            index += 2
+            var rows: [[String]] = []
+            while index < lines.count, let row = cells(in: lines[index]) {
+                rows.append(normalized(row: row, columnCount: headers.count))
+                index += 1
+            }
+            blocks.append(.table(MarkdownPreviewTable(headers: headers, rows: rows)))
+        }
+
+        appendMarkdown()
+        return blocks
+    }
+
+    private static func cells(in line: String) -> [String]? {
+        guard line.contains("|") else { return nil }
+        var content = line.trimmingCharacters(in: .whitespaces)
+        if content.hasPrefix("|") { content.removeFirst() }
+        if content.hasSuffix("|") { content.removeLast() }
+        let cells = content.split(separator: "|", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        return cells.count >= 2 ? cells : nil
+    }
+
+    private static func isTableSeparator(_ cell: String) -> Bool {
+        let marker = cell.trimmingCharacters(in: CharacterSet(charactersIn: ":"))
+        return marker.count >= 3 && marker.allSatisfy { $0 == "-" }
+    }
+
+    private static func normalized(row: [String], columnCount: Int) -> [String] {
+        if row.count >= columnCount {
+            return Array(row.prefix(columnCount))
+        }
+        return row + Array(repeating: "", count: columnCount - row.count)
     }
 }
