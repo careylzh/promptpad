@@ -58,7 +58,8 @@ Set `CONFIGURATION=debug` to generate a debug app bundle instead.
 
 The script applies the ad-hoc signature required to launch arm64 executables on
 macOS. This is a local signature only; the app is not Developer ID signed or
-notarized for public distribution.
+notarized for public distribution. The build fails if the bundle metadata,
+strict code-signature verification, or ad-hoc identity checks fail.
 
 ## Package DMG
 
@@ -71,3 +72,7 @@ Build a release executable, stage `PromptPad.app`, and create `dist/PromptPad.dm
 The packaging script must be run on macOS because it uses the system `hdiutil` tool to create the disk image. It first attempts a compressed UDZO disk image and falls back to a hybrid HFS image if the local environment cannot create compressed images. The DMG contains `PromptPad.app` and an `/Applications` shortcut.
 
 The script defaults `CLANG_MODULE_CACHE_PATH` to `.build/module-cache` and uses SwiftPM's `--disable-sandbox` flag for its internal release build so packaging does not depend on write access to user-level Swift or Clang caches.
+
+After creating the image, the script verifies and mounts it read-only, checks
+the app executable and Applications shortcut, validates the property list and
+code signature, and unmounts the validation volume automatically.

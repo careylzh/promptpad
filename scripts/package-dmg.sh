@@ -28,6 +28,7 @@ CONFIGURATION="${CONFIGURATION}" DIST_DIR="${DIST_DIR}" APP_OUTPUT_PATH="${APP_D
 ln -s /Applications "${STAGING_DIR}/Applications"
 
 echo "Creating ${DMG_PATH}..."
+IMAGE_HAS_EMBEDDED_CHECKSUM=true
 if ! hdiutil create \
   -volname "${APP_NAME}" \
   -srcfolder "${STAGING_DIR}" \
@@ -35,6 +36,7 @@ if ! hdiutil create \
   -format UDZO \
   "${DMG_PATH}" >/dev/null; then
   echo "warning: compressed DMG creation failed; falling back to a hybrid HFS image." >&2
+  IMAGE_HAS_EMBEDDED_CHECKSUM=false
   rm -f "${DMG_PATH}"
   hdiutil makehybrid \
     -hfs \
@@ -43,5 +45,50 @@ if ! hdiutil create \
     -o "${DMG_PATH}" \
     "${STAGING_DIR}" >/dev/null
 fi
+
+echo "Validating ${DMG_PATH}..."
+if [[ "${IMAGE_HAS_EMBEDDED_CHECKSUM}" == true ]]; then
+  hdiutil verify "${DMG_PATH}" >/dev/null
+else
+  hdiutil checksum -type CRC32 "${DMG_PATH}" >/dev/null
+fi
+
+MOUNT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/${APP_NAME}.validate.XXXXXX")"
+ATTACHED_DEVICE=""
+
+cleanup() {
+  if [[ -n "${ATTACHED_DEVICE}" ]]; then
+    hdiutil detach "${ATTACHED_DEVICE}" >/dev/null
+  fi
+  rmdir "${MOUNT_DIR}" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+ATTACH_OUTPUT="$(hdiutil attach -nobrowse -readonly -mountpoint "${MOUNT_DIR}" "${DMG_PATH}")"
+ATTACHED_DEVICE="$(awk '/^\/dev\// { device = $1 } END { print device }' <<<"${ATTACH_OUTPUT}")"
+
+if [[ -z "${ATTACHED_DEVICE}" ]]; then
+  echo "error: unable to identify the mounted DMG device." >&2
+  exit 1
+fi
+
+MOUNTED_APP="${MOUNT_DIR}/${APP_NAME}.app"
+if [[ ! -x "${MOUNTED_APP}/Contents/MacOS/${APP_NAME}" ]]; then
+  echo "error: mounted DMG does not contain an executable ${APP_NAME}.app." >&2
+  exit 1
+fi
+
+if [[ "$(readlink "${MOUNT_DIR}/Applications")" != "/Applications" ]]; then
+  echo "error: mounted DMG does not contain the Applications shortcut." >&2
+  exit 1
+fi
+
+plutil -lint "${MOUNTED_APP}/Contents/Info.plist" >/dev/null
+# HFS fallback images expose Finder metadata as extended attributes, so strict
+# verification is performed before imaging and normal deep verification here.
+codesign --verify --deep --verbose=2 "${MOUNTED_APP}"
+
+cleanup
+trap - EXIT
 
 echo "Created ${DMG_PATH}"

@@ -68,4 +68,19 @@ PLIST
 printf "APPL????" >"${APP_OUTPUT_PATH}/Contents/PkgInfo"
 codesign --force --deep --sign - "${APP_OUTPUT_PATH}"
 
+echo "Validating app bundle..."
+plutil -lint "${APP_OUTPUT_PATH}/Contents/Info.plist" >/dev/null
+codesign --verify --deep --strict --verbose=2 "${APP_OUTPUT_PATH}"
+
+SIGNATURE_DETAILS="$(codesign --display --verbose=2 "${APP_OUTPUT_PATH}" 2>&1)"
+if ! grep -q '^Signature=adhoc$' <<<"${SIGNATURE_DETAILS}"; then
+  echo "error: expected an ad-hoc signature without a Developer ID certificate." >&2
+  exit 1
+fi
+
+if ! grep -q '^TeamIdentifier=not set$' <<<"${SIGNATURE_DETAILS}"; then
+  echo "error: app bundle unexpectedly contains a development-team identity." >&2
+  exit 1
+fi
+
 echo "Created locally signed app bundle: ${APP_OUTPUT_PATH}"
