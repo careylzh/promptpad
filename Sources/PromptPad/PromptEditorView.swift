@@ -1,5 +1,9 @@
 import PromptPadCore
+#if os(macOS)
 import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
 import SwiftUI
 
 struct PromptEditorView: View {
@@ -12,6 +16,7 @@ struct PromptEditorView: View {
     }
 }
 
+#if os(macOS)
 private struct PlainTextEditor: NSViewRepresentable {
     @Binding var text: String
     @Binding var selection: EditorSelection
@@ -222,3 +227,135 @@ private extension NSEvent {
             && charactersIgnoringModifiers?.lowercased() == "b"
     }
 }
+#elseif os(iOS)
+private struct PlainTextEditor: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var selection: EditorSelection
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text, selection: $selection)
+    }
+
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.delegate = context.coordinator
+        textView.text = text
+        textView.backgroundColor = .clear
+        textView.textColor = .secondaryLabel
+        textView.tintColor = .label
+        textView.font = Self.editorFont()
+        textView.typingAttributes = Self.typingAttributes()
+        textView.textContainerInset = UIEdgeInsets(
+            top: PromptPadStyle.editorPadding,
+            left: PromptPadStyle.editorPadding,
+            bottom: PromptPadStyle.editorPadding,
+            right: PromptPadStyle.editorPadding
+        )
+        textView.textContainer.lineFragmentPadding = 0
+        textView.autocorrectionType = .no
+        textView.autocapitalizationType = .none
+        textView.smartQuotesType = .no
+        textView.smartDashesType = .no
+        textView.smartInsertDeleteType = .no
+        textView.keyboardDismissMode = .interactive
+        textView.alwaysBounceVertical = true
+        context.coordinator.textView = textView
+        context.coordinator.requestFocusIfNeeded()
+        return textView
+    }
+
+    func updateUIView(_ textView: UITextView, context: Context) {
+        context.coordinator.text = $text
+        context.coordinator.selection = $selection
+
+        if textView.text != text {
+            let selectedRange = textView.selectedRange
+            textView.text = text
+            textView.selectedRange = Self.clampedRange(selectedRange, textLength: textView.text.utf16.count)
+        }
+
+        let expectedRange = NSRange(location: selection.location, length: selection.length)
+        let clampedRange = Self.clampedRange(expectedRange, textLength: textView.text.utf16.count)
+        if textView.selectedRange != clampedRange {
+            textView.selectedRange = clampedRange
+        }
+
+        context.coordinator.requestFocusIfNeeded()
+    }
+
+    private static func editorFont() -> UIFont {
+        UIFont(name: PromptPadStyle.editorFontName, size: PromptPadStyle.editorFontSize)
+            ?? PromptPadStyle.editorFontFallbacks.lazy.compactMap {
+                UIFont(name: $0, size: PromptPadStyle.editorFontSize)
+            }.first
+            ?? .preferredFont(forTextStyle: .title3)
+    }
+
+    private static func paragraphStyle() -> NSParagraphStyle {
+        let style = NSMutableParagraphStyle()
+        style.lineSpacing = PromptPadStyle.editorLineSpacing
+        return style
+    }
+
+    private static func typingAttributes() -> [NSAttributedString.Key: Any] {
+        [
+            .font: editorFont(),
+            .foregroundColor: UIColor.secondaryLabel,
+            .paragraphStyle: paragraphStyle()
+        ]
+    }
+
+    private static func clampedRange(_ range: NSRange, textLength: Int) -> NSRange {
+        let location = min(max(0, range.location), textLength)
+        let length = min(max(0, range.length), textLength - location)
+        return NSRange(location: location, length: length)
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var text: Binding<String>
+        var selection: Binding<EditorSelection>
+        weak var textView: UITextView?
+        private var didRequestInitialFocus = false
+
+        init(text: Binding<String>, selection: Binding<EditorSelection>) {
+            self.text = text
+            self.selection = selection
+        }
+
+        func textViewDidChange(_ textView: UITextView) {
+            text.wrappedValue = textView.text
+            updateSelection(from: textView)
+        }
+
+        func textViewDidChangeSelection(_ textView: UITextView) {
+            updateSelection(from: textView)
+        }
+
+        func requestFocusIfNeeded() {
+            guard !didRequestInitialFocus, let textView else {
+                return
+            }
+
+            DispatchQueue.main.async { [weak self, weak textView] in
+                guard let self, let textView, !self.didRequestInitialFocus else {
+                    return
+                }
+
+                if textView.window != nil {
+                    textView.becomeFirstResponder()
+                    self.didRequestInitialFocus = true
+                }
+            }
+        }
+
+        private func updateSelection(from textView: UITextView) {
+            let range = textView.selectedRange
+            let editorSelection = EditorSelection(location: range.location, length: range.length)
+            if selection.wrappedValue != editorSelection {
+                selection.wrappedValue = editorSelection
+            }
+        }
+    }
+}
+#endif

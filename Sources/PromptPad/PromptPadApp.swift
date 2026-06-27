@@ -1,4 +1,3 @@
-import AppKit
 import PromptPadCore
 import SwiftUI
 import UniformTypeIdentifiers
@@ -6,6 +5,7 @@ import UniformTypeIdentifiers
 @main
 struct PromptPadApp: App {
     var body: some Scene {
+        #if os(macOS)
         Window(PromptPadStyle.appName, id: "primary-editor") {
             EditorWindow()
                 .frame(minWidth: 720, minHeight: 520)
@@ -15,6 +15,11 @@ struct PromptPadApp: App {
         .commands {
             CommandGroup(replacing: .newItem) {}
         }
+        #else
+        WindowGroup {
+            EditorWindow()
+        }
+        #endif
     }
 }
 
@@ -22,8 +27,12 @@ private struct EditorWindow: View {
     @StateObject private var editor: PromptEditorModel
     @State private var exportError: ExportError?
     @State private var importError: ImportError?
-    @State private var pendingImportURL: URL?
+    @State private var pendingImportDocument: PromptDocument?
     @State private var isConfirmingImport = false
+    @State private var isImporting = false
+    @State private var isExporting = false
+    @State private var exportDocument = PromptDocument(text: "")
+    @State private var exportFormat: PromptExportFormat = .markdown
 
     init() {
         _editor = StateObject(wrappedValue: Self.makeEditorModel())
@@ -31,7 +40,7 @@ private struct EditorWindow: View {
 
     var body: some View {
         ZStack {
-            Color(nsColor: .textBackgroundColor)
+            editorBackgroundColor
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -39,7 +48,7 @@ private struct EditorWindow: View {
                     Spacer()
 
                     Button {
-                        choosePromptToImport()
+                        isImporting = true
                     } label: {
                         Label("Import", systemImage: "square.and.arrow.down")
                     }
@@ -60,6 +69,16 @@ private struct EditorWindow: View {
                     }
                     .menuStyle(.borderlessButton)
                     .help("Export")
+                    .padding(.top, 18)
+                    .padding(.trailing, 10)
+
+                    Button {
+                        editor.applyMarkdownBold()
+                    } label: {
+                        Label("Bold", systemImage: "bold")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Bold")
                     .padding(.top, 18)
                     .padding(.trailing, 10)
 
@@ -85,6 +104,9 @@ private struct EditorWindow: View {
                 }
             }
         }
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .onChange(of: editor.text) {
             try? editor.save()
         }
@@ -95,13 +117,30 @@ private struct EditorWindow: View {
                 dismissButton: .default(Text("OK"))
             )
         }
-        .alert("Replace Current Prompt?", isPresented: $isConfirmingImport, presenting: pendingImportURL) { fileURL in
+        .fileImporter(
+            isPresented: $isImporting,
+            allowedContentTypes: PromptImportFormat.allCases.map(\.contentType),
+            allowsMultipleSelection: false
+        ) { result in
+            handleImportSelection(result)
+        }
+        .fileExporter(
+            isPresented: $isExporting,
+            document: exportDocument,
+            contentType: exportFormat.contentType,
+            defaultFilename: exportFormat.defaultFileName
+        ) { result in
+            if case .failure(let error) = result {
+                exportError = ExportError(message: error.localizedDescription)
+            }
+        }
+        .alert("Replace Current Prompt?", isPresented: $isConfirmingImport, presenting: pendingImportDocument) { document in
             Button("Cancel", role: .cancel) {
-                pendingImportURL = nil
+                pendingImportDocument = nil
             }
             Button("Replace", role: .destructive) {
-                importPrompt(from: fileURL)
-                pendingImportURL = nil
+                importPrompt(document)
+                pendingImportDocument = nil
             }
         } message: { _ in
             Text("Importing this file will replace the current prompt.")
@@ -137,51 +176,54 @@ private struct EditorWindow: View {
     }
 
     private func exportCurrentPrompt(as format: PromptExportFormat) {
-        let panel = NSSavePanel()
-        panel.canCreateDirectories = true
-        panel.isExtensionHidden = false
-        panel.nameFieldStringValue = format.defaultFileName
-        panel.allowedContentTypes = [format.contentType]
+        exportFormat = format
+        exportDocument = PromptDocument(text: editor.text, contentType: format.contentType)
+        isExporting = true
+    }
 
-        guard panel.runModal() == .OK, let fileURL = panel.url else {
-            return
-        }
-
+    private func handleImportSelection(_ result: Result<[URL], Error>) {
         do {
-            try editor.exportText(to: fileURL)
+            guard let fileURL = try result.get().first else {
+                return
+            }
+
+            let canAccessSecurityScopedResource = fileURL.startAccessingSecurityScopedResource()
+            defer {
+                if canAccessSecurityScopedResource {
+                    fileURL.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            let document = PromptDocument(text: try PromptTextImport.read(from: fileURL))
+            if editor.text.isEmpty {
+                importPrompt(document)
+            } else {
+                pendingImportDocument = document
+                isConfirmingImport = true
+            }
         } catch {
-            exportError = ExportError(message: error.localizedDescription)
+            importError = ImportError(message: error.localizedDescription)
         }
     }
 
-    private func choosePromptToImport() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = PromptImportFormat.allCases.map(\.contentType)
-
-        guard panel.runModal() == .OK, let fileURL = panel.url else {
-            return
-        }
-
-        if editor.text.isEmpty {
-            importPrompt(from: fileURL)
-        } else {
-            pendingImportURL = fileURL
-            isConfirmingImport = true
-        }
-    }
-
-    private func importPrompt(from fileURL: URL) {
+    private func importPrompt(_ document: PromptDocument) {
         do {
-            try editor.importText(from: fileURL)
+            editor.text = document.text
+            try editor.save()
             editor.selection = .zero
             editor.displayMode = .edit
         } catch {
             importError = ImportError(message: error.localizedDescription)
         }
     }
+}
+
+private var editorBackgroundColor: Color {
+    #if os(macOS)
+    Color(nsColor: .textBackgroundColor)
+    #else
+    Color(uiColor: .systemBackground)
+    #endif
 }
 
 private struct ExportError: Identifiable {
@@ -203,6 +245,35 @@ private extension PromptExportFormat {
 private extension PromptImportFormat {
     var contentType: UTType {
         UTType(filenameExtension: fileExtension) ?? .plainText
+    }
+}
+
+private struct PromptDocument: FileDocument, Identifiable {
+    static var readableContentTypes: [UTType] {
+        PromptImportFormat.allCases.map(\.contentType)
+    }
+
+    let id = UUID()
+    var text: String
+    var contentType: UTType = .plainText
+
+    init(text: String, contentType: UTType = .plainText) {
+        self.text = text
+        self.contentType = contentType
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents,
+              let text = String(data: data, encoding: .utf8) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+
+        self.text = text
+        self.contentType = configuration.contentType
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: Data(text.utf8))
     }
 }
 

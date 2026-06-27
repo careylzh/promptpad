@@ -1,10 +1,11 @@
 # PromptPad
 
-PromptPad is a minimal macOS Markdown prompt editor built with SwiftUI and a small `PromptPadCore` library for testable editor behavior.
+PromptPad is a minimal macOS and iOS Markdown prompt editor built with SwiftUI and a small `PromptPadCore` library for testable editor behavior.
 
 ## Requirements
 
 - macOS 14 or newer
+- iOS 17 or newer for the iOS app experience
 - Xcode or the Xcode Command Line Tools, including `swift`
 - `hdiutil` for DMG packaging, which is included with macOS
 
@@ -18,6 +19,12 @@ For a release build:
 
 ```sh
 swift build -c release
+```
+
+To compile the iOS app path from SwiftPM:
+
+```sh
+swift build --sdk "$(xcrun --sdk iphoneos --show-sdk-path)" --triple arm64-apple-ios17.0
 ```
 
 ## Test
