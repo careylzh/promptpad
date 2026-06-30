@@ -72,16 +72,6 @@ private struct EditorWindow: View {
                     .padding(.top, 18)
                     .padding(.trailing, 10)
 
-                    Button {
-                        editor.applyMarkdownBold()
-                    } label: {
-                        Label("Bold", systemImage: "bold")
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Bold")
-                    .padding(.top, 18)
-                    .padding(.trailing, 10)
-
                     Picker("Editor mode", selection: $editor.displayMode) {
                         ForEach(EditorDisplayMode.allCases) { mode in
                             Text(mode.title).tag(mode)
