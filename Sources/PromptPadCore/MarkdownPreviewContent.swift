@@ -14,9 +14,36 @@ public enum MarkdownPreviewBlock: Equatable, Sendable {
     case heading(level: Int, text: String)
     case codeBlock(language: String?, code: String)
     case blockquote(String)
+    case list([MarkdownPreviewListItem])
     case spacer
     case divider
     case table(MarkdownPreviewTable)
+}
+
+public enum MarkdownPreviewListKind: Equatable, Sendable {
+    case unordered
+    case ordered
+}
+
+public enum MarkdownPreviewTaskState: Equatable, Sendable {
+    case unchecked
+    case checked
+}
+
+public struct MarkdownPreviewListItem: Equatable, Sendable {
+    public let kind: MarkdownPreviewListKind
+    public let level: Int
+    public let ordinal: Int?
+    public let taskState: MarkdownPreviewTaskState?
+    public let text: String
+
+    public init(kind: MarkdownPreviewListKind, level: Int, ordinal: Int? = nil, taskState: MarkdownPreviewTaskState? = nil, text: String) {
+        self.kind = kind
+        self.level = level
+        self.ordinal = ordinal
+        self.taskState = taskState
+        self.text = text
+    }
 }
 
 public struct MarkdownPreviewTable: Equatable, Sendable {
@@ -99,8 +126,77 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
             return Self.extractBlockquotes(from: source)
         }.flatMap { block in
             guard case .markdown(let source) = block else { return [block] }
+            return Self.extractLists(from: source)
+        }.flatMap { block in
+            guard case .markdown(let source) = block else { return [block] }
             return Self.extractTables(from: source)
         }
+    }
+
+    private static func extractLists(from source: String) -> [MarkdownPreviewBlock] {
+        let lines = source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var blocks: [MarkdownPreviewBlock] = []
+        var markdownLines: [String] = []
+        var listItems: [MarkdownPreviewListItem] = []
+
+        func appendMarkdown() {
+            guard !markdownLines.isEmpty else { return }
+            blocks.append(.markdown(markdownLines.joined(separator: "\n")))
+            markdownLines.removeAll(keepingCapacity: true)
+        }
+        func appendList() {
+            guard !listItems.isEmpty else { return }
+            blocks.append(.list(listItems))
+            listItems.removeAll(keepingCapacity: true)
+        }
+
+        for line in lines {
+            guard let item = listItem(from: line) else {
+                appendList()
+                markdownLines.append(line)
+                continue
+            }
+            appendMarkdown()
+            listItems.append(item)
+        }
+        appendList()
+        appendMarkdown()
+        return blocks
+    }
+
+    private static func listItem(from line: String) -> MarkdownPreviewListItem? {
+        let indentation = line.prefix { $0 == " " || $0 == "\t" }
+        let level = indentation.reduce(0) { count, character in count + (character == "\t" ? 1 : 0) } + indentation.filter { $0 == " " }.count / 2
+        let trimmed = line.dropFirst(indentation.count)
+
+        let kind: MarkdownPreviewListKind
+        let ordinal: Int?
+        let rawText: Substring
+        if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") || trimmed.hasPrefix("+ ") {
+            kind = .unordered
+            ordinal = nil
+            rawText = trimmed.dropFirst(2)
+        } else {
+            let digits = trimmed.prefix { $0.isNumber }
+            guard !digits.isEmpty, trimmed.dropFirst(digits.count).hasPrefix(". ") else { return nil }
+            kind = .ordered
+            ordinal = Int(String(digits))
+            rawText = trimmed.dropFirst(digits.count + 2)
+        }
+
+        let taskState: MarkdownPreviewTaskState?
+        let text: String
+        if rawText.hasPrefix("[ ] ") {
+            taskState = .unchecked
+            text = String(rawText.dropFirst(4))
+        } else if rawText.lowercased().hasPrefix("[x] ") {
+            taskState = .checked
+            text = String(rawText.dropFirst(4))
+        } else {
+            taskState = nil
+            text = String(rawText)
+        }
+        return MarkdownPreviewListItem(kind: kind, level: level, ordinal: ordinal, taskState: taskState, text: text)
     }
 
     private static func extractBlockquotes(from source: String) -> [MarkdownPreviewBlock] {

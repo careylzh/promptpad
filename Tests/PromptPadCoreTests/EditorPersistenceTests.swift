@@ -80,6 +80,15 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(content.blocks, [.blockquote("First line\nSecond **line**")])
     }
 
+    func testMarkdownPreviewExtractsUnorderedList() {
+        let content = MarkdownPreviewContent(markdown: "- Alpha\n- Beta")
+
+        XCTAssertEqual(content.blocks, [.list([
+            MarkdownPreviewListItem(kind: .unordered, level: 0, text: "Alpha"),
+            MarkdownPreviewListItem(kind: .unordered, level: 0, text: "Beta")
+        ])])
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

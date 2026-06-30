@@ -15,7 +15,7 @@ promptpad:
     * [x] inline code. Done: inline code renders in Preview and is covered by a semantic renderer test.
     * [x] fenced code blocks, including optional language identifiers. Done: fenced code renders in a monospaced panel with optional language labels and preserves blank lines.
     * [x] blockquotes. Done: contiguous quote lines render with a quote rail and italic content; parser coverage added.
-    * [ ] unordered lists
+    * [x] unordered lists. Done: unordered rows render with bullet markers and parser coverage.
     * [ ] ordered lists
     * [ ] nested lists
     * [ ] task lists with checked and unchecked items

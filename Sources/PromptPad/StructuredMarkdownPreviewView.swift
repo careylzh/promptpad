@@ -41,6 +41,19 @@ struct StructuredMarkdownPreviewView: View {
                                 .italic()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                    case .list(let items):
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text(listMarker(for: item))
+                                        .font(.system(size: PromptPadStyle.editorFontSize, design: .monospaced))
+                                        .frame(minWidth: 20, alignment: .trailing)
+                                    Text(renderedMarkdown(from: item.text))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .padding(.leading, CGFloat(item.level) * 24)
+                            }
+                        }
                     case .spacer:
                         Color.clear
                             .frame(height: PromptPadStyle.editorFontSize)
@@ -77,6 +90,16 @@ struct StructuredMarkdownPreviewView: View {
         case 4: 24
         case 5: 22
         default: 20
+        }
+    }
+
+    private func listMarker(for item: MarkdownPreviewListItem) -> String {
+        if let taskState = item.taskState {
+            return taskState == .checked ? "☑" : "☐"
+        }
+        switch item.kind {
+        case .unordered: return "•"
+        case .ordered: return "\(item.ordinal ?? 1)."
         }
     }
 
