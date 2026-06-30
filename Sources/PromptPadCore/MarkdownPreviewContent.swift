@@ -15,6 +15,7 @@ public enum MarkdownPreviewBlock: Equatable, Sendable {
     case codeBlock(language: String?, code: String)
     case blockquote(String)
     case list([MarkdownPreviewListItem])
+    case image(altText: String, source: String)
     case spacer
     case divider
     case table(MarkdownPreviewTable)
@@ -126,11 +127,46 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
             return Self.extractBlockquotes(from: source)
         }.flatMap { block in
             guard case .markdown(let source) = block else { return [block] }
+            return Self.extractImages(from: source)
+        }.flatMap { block in
+            guard case .markdown(let source) = block else { return [block] }
             return Self.extractLists(from: source)
         }.flatMap { block in
             guard case .markdown(let source) = block else { return [block] }
             return Self.extractTables(from: source)
         }
+    }
+
+    private static func extractImages(from source: String) -> [MarkdownPreviewBlock] {
+        let lines = source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var blocks: [MarkdownPreviewBlock] = []
+        var markdownLines: [String] = []
+
+        func appendMarkdown() {
+            guard !markdownLines.isEmpty else { return }
+            blocks.append(.markdown(markdownLines.joined(separator: "\n")))
+            markdownLines.removeAll(keepingCapacity: true)
+        }
+
+        for line in lines {
+            guard line.hasPrefix("!["), let separator = line.range(of: "]("), line.hasSuffix(")") else {
+                markdownLines.append(line)
+                continue
+            }
+            let altStart = line.index(line.startIndex, offsetBy: 2)
+            let altText = String(line[altStart..<separator.lowerBound])
+            let sourceStart = separator.upperBound
+            let sourceEnd = line.index(before: line.endIndex)
+            let imageSource = String(line[sourceStart..<sourceEnd])
+            guard !imageSource.isEmpty else {
+                markdownLines.append(line)
+                continue
+            }
+            appendMarkdown()
+            blocks.append(.image(altText: altText, source: imageSource))
+        }
+        appendMarkdown()
+        return blocks
     }
 
     private static func extractLists(from source: String) -> [MarkdownPreviewBlock] {

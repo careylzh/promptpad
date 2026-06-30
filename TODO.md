@@ -20,7 +20,7 @@ promptpad:
     * [x] nested lists. Done: two-space and tab indentation produce nested list levels with visual indentation.
     * [x] task lists with checked and unchecked items. Done: task rows render distinct checked and unchecked symbols; parser coverage added.
     * [x] links (`[label](https://example.com)`). Done: link labels and destinations render through attributed Markdown with semantic coverage.
-    * [ ] images (`![alt text](https://example.com/image.png)`)
+    * [x] images (`![alt text](https://example.com/image.png)`). Done: standalone image syntax renders asynchronously with alt-text fallback and parser coverage.
     * [ ] automatic links (`<https://example.com>`)
     * [ ] horizontal rules (`---`, `***`, or `___`)
     * [ ] escaped Markdown characters

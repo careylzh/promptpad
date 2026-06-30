@@ -125,6 +125,15 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertTrue(rendered.runs.contains { $0.link?.absoluteString == "https://openai.com" })
     }
 
+    func testMarkdownPreviewExtractsImageAltTextAndSource() {
+        let content = MarkdownPreviewContent(markdown: "![Diagram](https://example.com/diagram.png)")
+
+        XCTAssertEqual(
+            content.blocks,
+            [.image(altText: "Diagram", source: "https://example.com/diagram.png")]
+        )
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

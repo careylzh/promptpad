@@ -54,6 +54,24 @@ struct StructuredMarkdownPreviewView: View {
                                 .padding(.leading, CGFloat(item.level) * 24)
                             }
                         }
+                    case .image(let altText, let source):
+                        AsyncImage(url: URL(string: source)) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFit()
+                            case .failure:
+                                Label(altText.isEmpty ? "Image unavailable" : altText, systemImage: "photo")
+                                    .foregroundStyle(.tertiary)
+                            case .empty:
+                                ProgressView()
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: 360, alignment: .leading)
+                        .accessibilityLabel(altText)
                     case .spacer:
                         Color.clear
                             .frame(height: PromptPadStyle.editorFontSize)
