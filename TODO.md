@@ -22,7 +22,7 @@ promptpad:
     * [x] links (`[label](https://example.com)`). Done: link labels and destinations render through attributed Markdown with semantic coverage.
     * [x] images (`![alt text](https://example.com/image.png)`). Done: standalone image syntax renders asynchronously with alt-text fallback and parser coverage.
     * [x] automatic links (`<https://example.com>`). Done: automatic URL syntax produces a linked destination with semantic coverage.
-    * [ ] horizontal rules (`---`, `***`, or `___`)
+    * [x] horizontal rules (`---`, `***`, or `___`). Done: standard rule markers, including spaced forms, render as padded dividers.
     * [ ] escaped Markdown characters
     * [ ] hard line breaks
 * [ ] add image icon to app

@@ -130,11 +130,39 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
             return Self.extractImages(from: source)
         }.flatMap { block in
             guard case .markdown(let source) = block else { return [block] }
+            return Self.extractHorizontalRules(from: source)
+        }.flatMap { block in
+            guard case .markdown(let source) = block else { return [block] }
             return Self.extractLists(from: source)
         }.flatMap { block in
             guard case .markdown(let source) = block else { return [block] }
             return Self.extractTables(from: source)
         }
+    }
+
+    private static func extractHorizontalRules(from source: String) -> [MarkdownPreviewBlock] {
+        let lines = source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var blocks: [MarkdownPreviewBlock] = []
+        var markdownLines: [String] = []
+
+        func appendMarkdown() {
+            guard !markdownLines.isEmpty else { return }
+            blocks.append(.markdown(markdownLines.joined(separator: "\n")))
+            markdownLines.removeAll(keepingCapacity: true)
+        }
+
+        for line in lines {
+            let marker = line.filter { !$0.isWhitespace }
+            let isRule = marker.count >= 3 && ["-", "*", "_"].contains(String(marker.first ?? " ")) && marker.allSatisfy { $0 == marker.first }
+            if isRule {
+                appendMarkdown()
+                blocks.append(.divider)
+            } else {
+                markdownLines.append(line)
+            }
+        }
+        appendMarkdown()
+        return blocks
     }
 
     private static func extractImages(from source: String) -> [MarkdownPreviewBlock] {

@@ -141,6 +141,12 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertTrue(rendered.runs.contains { $0.link?.absoluteString == "https://example.com" })
     }
 
+    func testMarkdownPreviewExtractsStandardHorizontalRules() {
+        for marker in ["---", "***", "___", "- - -"] {
+            XCTAssertEqual(MarkdownPreviewContent(markdown: marker).blocks, [.divider])
+        }
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 
