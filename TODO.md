@@ -9,7 +9,7 @@ promptpad:
 * [ ] markdown syntax visualisation in preview
     * [x] bold. Done: strong emphasis renders in Preview and is covered by a semantic renderer test.
     * [x] italic. Done: emphasis renders in Preview and is covered by a semantic renderer test.
-    * [ ] bold and italic combined
+    * [x] bold and italic combined. Done: combined strong emphasis is covered by a semantic renderer test.
     * [ ] strikethrough
     * [ ] headings (levels 1–6)
     * [ ] inline code
