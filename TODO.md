@@ -5,7 +5,7 @@ promptpad:
 - [x] add README.txt documenting steps to install this app, and local UTF-8 file persistence, launch restore, atomic autosave/import behavior, protocol-based architecture, and current synchronous un-debounced silent-error limitation. Done: installation and persistence behavior documented.
 - [x] write a shell script to build and generate an unsigned .app. Done: `scripts/build-app.sh` produced a launchable ad-hoc-signed `dist/PromptPad.app` without a Developer ID certificate.
 - [x] in the preview, add a line spacing before and after the line. Done: preview dividers now have explicit vertical padding.
-- [ ] single-line spacings should be reflected in the preview section. (i.e. when user presses enter it's effectively a new line, reflected as an empty line spacing in the preview.)
+- [x] single-line spacings should be reflected in the preview section. (i.e. when user presses enter it's effectively a new line, reflected as an empty line spacing in the preview.) Done: single blank lines render as explicit preview spacers.
 * [ ] markdown syntax visualisation in preview
     * [ ] bold
     * [ ] italic

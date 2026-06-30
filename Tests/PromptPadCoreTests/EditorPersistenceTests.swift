@@ -12,7 +12,7 @@ final class EditorPersistenceTests: XCTestCase {
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 
-        XCTAssertEqual(content.blocks, [.markdown("First\n\nSecond")])
+        XCTAssertEqual(content.blocks, [.markdown("First"), .spacer, .markdown("Second")])
     }
 
     func testMarkdownPreviewParsesPipeTable() {

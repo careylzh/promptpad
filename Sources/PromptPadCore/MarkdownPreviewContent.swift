@@ -2,6 +2,7 @@ import Foundation
 
 public enum MarkdownPreviewBlock: Equatable, Sendable {
     case markdown(String)
+    case spacer
     case divider
     case table(MarkdownPreviewTable)
 }
@@ -44,8 +45,9 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
             if emptyLineCount >= 2 {
                 appendParagraph()
                 rawBlocks.append(.divider)
-            } else if emptyLineCount == 1, !paragraphLines.isEmpty {
-                paragraphLines.append("")
+            } else if emptyLineCount == 1 {
+                appendParagraph()
+                rawBlocks.append(.spacer)
             }
 
             emptyLineCount = 0

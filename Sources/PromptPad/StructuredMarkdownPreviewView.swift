@@ -12,6 +12,9 @@ struct StructuredMarkdownPreviewView: View {
                     case .markdown(let source):
                         Text(renderedMarkdown(from: source))
                             .frame(maxWidth: .infinity, alignment: .leading)
+                    case .spacer:
+                        Color.clear
+                            .frame(height: PromptPadStyle.editorFontSize)
                     case .divider:
                         Divider()
                             .padding(.vertical, PromptPadStyle.editorLineSpacing)
