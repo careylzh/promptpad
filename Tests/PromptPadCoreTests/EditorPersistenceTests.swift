@@ -147,6 +147,13 @@ final class EditorPersistenceTests: XCTestCase {
         }
     }
 
+    func testMarkdownPreviewPreservesEscapedMarkdownCharacters() {
+        let rendered = MarkdownPreviewRenderer.attributedString(from: "\\*literal\\* \\#tag \\[label\\]")
+
+        XCTAssertEqual(String(rendered.characters), "*literal* #tag [label]")
+        XCTAssertTrue(rendered.runs.allSatisfy { $0.inlinePresentationIntent == nil && $0.link == nil })
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

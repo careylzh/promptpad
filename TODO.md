@@ -23,6 +23,6 @@ promptpad:
     * [x] images (`![alt text](https://example.com/image.png)`). Done: standalone image syntax renders asynchronously with alt-text fallback and parser coverage.
     * [x] automatic links (`<https://example.com>`). Done: automatic URL syntax produces a linked destination with semantic coverage.
     * [x] horizontal rules (`---`, `***`, or `___`). Done: standard rule markers, including spaced forms, render as padded dividers.
-    * [ ] escaped Markdown characters
+    * [x] escaped Markdown characters. Done: escaped punctuation renders literally without emphasis or link semantics; coverage added.
     * [ ] hard line breaks
 * [ ] add image icon to app
