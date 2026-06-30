@@ -160,6 +160,19 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(String(rendered.characters), "First line\nSecond line")
     }
 
+    func testMarkdownPreviewPreservesEachChatMessageLine() {
+        let source = """
+        [8:22 pm, 07/06/2026] Alif: Hey Carey
+        [8:22 pm, 07/06/2026] Alif: Alif (KKH) here
+        [8:26 am, 08/06/2026] Lzhc: Selamat Pagi Alif!
+        [8:27 am, 08/06/2026] Lzhc: I heard from Gabe that you were asking for my number. How may I help you?
+        """
+
+        let rendered = MarkdownPreviewRenderer.attributedString(from: source)
+
+        XCTAssertEqual(String(rendered.characters), source)
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

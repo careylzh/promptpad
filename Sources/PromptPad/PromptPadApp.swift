@@ -145,9 +145,9 @@ private struct EditorWindow: View {
     }
 
     private static func makeEditorModel() -> PromptEditorModel {
-        if ProcessInfo.processInfo.arguments.contains("--markdown-preview-smoke") {
+        if let smokeFixture = previewSmokeFixture(for: ProcessInfo.processInfo.arguments) {
             return PromptEditorModel(
-                text: markdownPreviewSmokeFixture,
+                text: smokeFixture,
                 displayMode: .preview,
                 persistence: TransientEditorPersistence()
             )
@@ -171,6 +171,16 @@ private struct EditorWindow: View {
         } catch {
             preconditionFailure("Unable to resolve Application Support storage: \(error)")
         }
+    }
+
+    private static func previewSmokeFixture(for arguments: [String]) -> String? {
+        if arguments.contains("--line-break-smoke") {
+            return lineBreakSmokeFixture
+        }
+        if arguments.contains("--markdown-preview-smoke") {
+            return markdownPreviewSmokeFixture
+        }
+        return nil
     }
 
     private func exportCurrentPrompt(as format: PromptExportFormat) {
@@ -248,6 +258,13 @@ print(greeting)
 
 Hard break here\\
 Next line with escaped \\*markers\\* and <https://example.com>.
+"""
+
+private let lineBreakSmokeFixture = """
+[8:22 pm, 07/06/2026] Alif: Hey Carey
+[8:22 pm, 07/06/2026] Alif: Alif (KKH) here
+[8:26 am, 08/06/2026] Lzhc: Selamat Pagi Alif!
+[8:27 am, 08/06/2026] Lzhc: I heard from Gabe that you were asking for my number. How may I help you?
 """
 
 private var editorBackgroundColor: Color {

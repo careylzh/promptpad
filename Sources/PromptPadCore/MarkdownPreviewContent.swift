@@ -2,10 +2,26 @@ import Foundation
 
 public enum MarkdownPreviewRenderer {
     public static func attributedString(from source: String) -> AttributedString {
-        (try? AttributedString(
-            markdown: source,
+        let sourceWithVisibleLineBreaks = preservingSoftLineBreaks(in: source)
+        return (try? AttributedString(
+            markdown: sourceWithVisibleLineBreaks,
             options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .full)
         )) ?? AttributedString(source)
+    }
+
+    private static func preservingSoftLineBreaks(in source: String) -> String {
+        let lines = source.split(separator: "\n", omittingEmptySubsequences: false)
+        guard lines.count > 1 else { return source }
+
+        return lines.enumerated().map { index, line in
+            let value = String(line)
+            guard index < lines.count - 1,
+                  !value.hasSuffix("  "),
+                  !value.hasSuffix("\\") else {
+                return value
+            }
+            return value + "  "
+        }.joined(separator: "\n")
     }
 }
 
