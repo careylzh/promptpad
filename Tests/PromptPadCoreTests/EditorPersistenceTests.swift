@@ -36,6 +36,15 @@ final class EditorPersistenceTests: XCTestCase {
         })
     }
 
+    func testMarkdownPreviewRendersStrikethrough() {
+        let rendered = MarkdownPreviewRenderer.attributedString(from: "~~obsolete~~")
+
+        XCTAssertEqual(String(rendered.characters), "obsolete")
+        XCTAssertTrue(rendered.runs.contains { run in
+            run.inlinePresentationIntent?.contains(.strikethrough) == true
+        })
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 
