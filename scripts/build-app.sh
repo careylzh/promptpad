@@ -34,6 +34,7 @@ echo "Creating locally signed app bundle at ${APP_OUTPUT_PATH}..."
 rm -rf "${APP_OUTPUT_PATH}"
 mkdir -p "${APP_OUTPUT_PATH}/Contents/MacOS" "${APP_OUTPUT_PATH}/Contents/Resources"
 cp "${EXECUTABLE_PATH}" "${APP_OUTPUT_PATH}/Contents/MacOS/${APP_NAME}"
+cp "${ROOT_DIR}/Assets/PromptPad.icns" "${APP_OUTPUT_PATH}/Contents/Resources/PromptPad.icns"
 chmod +x "${APP_OUTPUT_PATH}/Contents/MacOS/${APP_NAME}"
 
 cat >"${APP_OUTPUT_PATH}/Contents/Info.plist" <<PLIST
@@ -49,6 +50,8 @@ cat >"${APP_OUTPUT_PATH}/Contents/Info.plist" <<PLIST
   <string>com.promptpad.${APP_NAME}</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
+  <key>CFBundleIconFile</key>
+  <string>PromptPad.icns</string>
   <key>CFBundleName</key>
   <string>${APP_NAME}</string>
   <key>CFBundlePackageType</key>

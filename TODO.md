@@ -25,4 +25,4 @@ promptpad:
     * [x] horizontal rules (`---`, `***`, or `___`). Done: standard rule markers, including spaced forms, render as padded dividers.
     * [x] escaped Markdown characters. Done: escaped punctuation renders literally without emphasis or link semantics; coverage added.
     * [x] hard line breaks. Done: two-space Markdown line breaks render as newlines with coverage.
-* [ ] add image icon to app
+* [x] add image icon to app. Done: the generated PromptPad icon is packaged as native ICNS sizes, bundled, and declared in `Info.plist` by the app build script.
