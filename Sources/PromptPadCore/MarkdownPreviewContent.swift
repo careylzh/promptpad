@@ -1,5 +1,14 @@
 import Foundation
 
+public enum MarkdownPreviewRenderer {
+    public static func attributedString(from source: String) -> AttributedString {
+        (try? AttributedString(
+            markdown: source,
+            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .full)
+        )) ?? AttributedString(source)
+    }
+}
+
 public enum MarkdownPreviewBlock: Equatable, Sendable {
     case markdown(String)
     case spacer

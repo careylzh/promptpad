@@ -37,10 +37,7 @@ struct StructuredMarkdownPreviewView: View {
     }
 
     private func renderedMarkdown(from source: String) -> AttributedString {
-        (try? AttributedString(
-            markdown: source,
-            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .full)
-        )) ?? AttributedString(source)
+        MarkdownPreviewRenderer.attributedString(from: source)
     }
 
     private func tableView(_ table: MarkdownPreviewTable) -> some View {

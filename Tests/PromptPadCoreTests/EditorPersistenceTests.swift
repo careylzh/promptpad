@@ -9,6 +9,15 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(content.blocks, [.markdown("First"), .divider, .markdown("Second")])
     }
 
+    func testMarkdownPreviewRendersBold() {
+        let rendered = MarkdownPreviewRenderer.attributedString(from: "**important**")
+
+        XCTAssertEqual(String(rendered.characters), "important")
+        XCTAssertTrue(rendered.runs.contains { run in
+            run.inlinePresentationIntent?.contains(.stronglyEmphasized) == true
+        })
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 
