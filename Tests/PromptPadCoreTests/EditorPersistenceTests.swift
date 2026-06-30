@@ -18,6 +18,15 @@ final class EditorPersistenceTests: XCTestCase {
         })
     }
 
+    func testMarkdownPreviewRendersItalic() {
+        let rendered = MarkdownPreviewRenderer.attributedString(from: "*emphasis*")
+
+        XCTAssertEqual(String(rendered.characters), "emphasis")
+        XCTAssertTrue(rendered.runs.contains { run in
+            run.inlinePresentationIntent?.contains(.emphasized) == true
+        })
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

@@ -8,7 +8,7 @@ promptpad:
 - [x] single-line spacings should be reflected in the preview section. (i.e. when user presses enter it's effectively a new line, reflected as an empty line spacing in the preview.) Done: single blank lines render as explicit preview spacers.
 * [ ] markdown syntax visualisation in preview
     * [x] bold. Done: strong emphasis renders in Preview and is covered by a semantic renderer test.
-    * [ ] italic
+    * [x] italic. Done: emphasis renders in Preview and is covered by a semantic renderer test.
     * [ ] bold and italic combined
     * [ ] strikethrough
     * [ ] headings (levels 1–6)
