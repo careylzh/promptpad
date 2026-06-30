@@ -118,6 +118,13 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(items.map(\.text), ["Pending", "Complete"])
     }
 
+    func testMarkdownPreviewRendersLinkDestination() {
+        let rendered = MarkdownPreviewRenderer.attributedString(from: "[OpenAI](https://openai.com)")
+
+        XCTAssertEqual(String(rendered.characters), "OpenAI")
+        XCTAssertTrue(rendered.runs.contains { $0.link?.absoluteString == "https://openai.com" })
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 
