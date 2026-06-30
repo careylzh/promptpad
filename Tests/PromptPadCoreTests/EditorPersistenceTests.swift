@@ -98,6 +98,16 @@ final class EditorPersistenceTests: XCTestCase {
         ])])
     }
 
+    func testMarkdownPreviewPreservesNestedListLevels() {
+        let content = MarkdownPreviewContent(markdown: "- Parent\n  - Child\n    1. Grandchild")
+
+        guard case .list(let items) = content.blocks.first else {
+            return XCTFail("Expected a list block")
+        }
+        XCTAssertEqual(items.map(\.level), [0, 1, 2])
+        XCTAssertEqual(items.map(\.kind), [.unordered, .unordered, .ordered])
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

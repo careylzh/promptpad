@@ -17,7 +17,7 @@ promptpad:
     * [x] blockquotes. Done: contiguous quote lines render with a quote rail and italic content; parser coverage added.
     * [x] unordered lists. Done: unordered rows render with bullet markers and parser coverage.
     * [x] ordered lists. Done: ordered rows retain and render their source ordinals; parser coverage added.
-    * [ ] nested lists
+    * [x] nested lists. Done: two-space and tab indentation produce nested list levels with visual indentation.
     * [ ] task lists with checked and unchecked items
     * [ ] links (`[label](https://example.com)`)
     * [ ] images (`![alt text](https://example.com/image.png)`)
