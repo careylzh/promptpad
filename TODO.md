@@ -4,3 +4,25 @@ promptpad:
 - [x] support table syntax in preview. Done: pipe tables render as native grids; `swift test` passed.
 - [x] add README.txt documenting steps to install this app, and local UTF-8 file persistence, launch restore, atomic autosave/import behavior, protocol-based architecture, and current synchronous un-debounced silent-error limitation. Done: installation and persistence behavior documented.
 - [x] write a shell script to build and generate an unsigned .app. Done: `scripts/build-app.sh` produced a launchable ad-hoc-signed `dist/PromptPad.app` without a Developer ID certificate.
+- [x] in the preview, add a line spacing before and after the line. Done: preview dividers now have explicit vertical padding.
+- [ ] single-line spacings should be reflected in the preview section. (i.e. when user presses enter it's effectively a new line, reflected as an empty line spacing in the preview.)
+* [ ] markdown syntax visualisation in preview
+    * [ ] bold
+    * [ ] italic
+    * [ ] bold and italic combined
+    * [ ] strikethrough
+    * [ ] headings (levels 1–6)
+    * [ ] inline code
+    * [ ] fenced code blocks, including optional language identifiers
+    * [ ] blockquotes
+    * [ ] unordered lists
+    * [ ] ordered lists
+    * [ ] nested lists
+    * [ ] task lists with checked and unchecked items
+    * [ ] links (`[label](https://example.com)`)
+    * [ ] images (`![alt text](https://example.com/image.png)`)
+    * [ ] automatic links (`<https://example.com>`)
+    * [ ] horizontal rules (`---`, `***`, or `___`)
+    * [ ] escaped Markdown characters
+    * [ ] hard line breaks
+* [ ] add image icon to app

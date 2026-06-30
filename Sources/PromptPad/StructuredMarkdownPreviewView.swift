@@ -14,6 +14,7 @@ struct StructuredMarkdownPreviewView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     case .divider:
                         Divider()
+                            .padding(.vertical, PromptPadStyle.editorLineSpacing)
                     case .table(let table):
                         tableView(table)
                     }
