@@ -154,6 +154,12 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertTrue(rendered.runs.allSatisfy { $0.inlinePresentationIntent == nil && $0.link == nil })
     }
 
+    func testMarkdownPreviewRendersHardLineBreak() {
+        let rendered = MarkdownPreviewRenderer.attributedString(from: "First line  \nSecond line")
+
+        XCTAssertEqual(String(rendered.characters), "First line\nSecond line")
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

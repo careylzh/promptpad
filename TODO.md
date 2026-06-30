@@ -24,5 +24,5 @@ promptpad:
     * [x] automatic links (`<https://example.com>`). Done: automatic URL syntax produces a linked destination with semantic coverage.
     * [x] horizontal rules (`---`, `***`, or `___`). Done: standard rule markers, including spaced forms, render as padded dividers.
     * [x] escaped Markdown characters. Done: escaped punctuation renders literally without emphasis or link semantics; coverage added.
-    * [ ] hard line breaks
+    * [x] hard line breaks. Done: two-space Markdown line breaks render as newlines with coverage.
 * [ ] add image icon to app
