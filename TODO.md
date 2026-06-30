@@ -6,7 +6,7 @@ promptpad:
 - [x] write a shell script to build and generate an unsigned .app. Done: `scripts/build-app.sh` produced a launchable ad-hoc-signed `dist/PromptPad.app` without a Developer ID certificate.
 - [x] in the preview, add a line spacing before and after the line. Done: preview dividers now have explicit vertical padding.
 - [x] single-line spacings should be reflected in the preview section. (i.e. when user presses enter it's effectively a new line, reflected as an empty line spacing in the preview.) Done: single blank lines render as explicit preview spacers.
-* [ ] markdown syntax visualisation in preview
+* [x] markdown syntax visualisation in preview. Done: common inline and block syntax is parsed, rendered, covered by focused tests, and exercised by a non-persistent runtime smoke fixture.
     * [x] bold. Done: strong emphasis renders in Preview and is covered by a semantic renderer test.
     * [x] italic. Done: emphasis renders in Preview and is covered by a semantic renderer test.
     * [x] bold and italic combined. Done: combined strong emphasis is covered by a semantic renderer test.

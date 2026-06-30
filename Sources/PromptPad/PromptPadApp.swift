@@ -145,6 +145,14 @@ private struct EditorWindow: View {
     }
 
     private static func makeEditorModel() -> PromptEditorModel {
+        if ProcessInfo.processInfo.arguments.contains("--markdown-preview-smoke") {
+            return PromptEditorModel(
+                text: markdownPreviewSmokeFixture,
+                displayMode: .preview,
+                persistence: TransientEditorPersistence()
+            )
+        }
+
         let fileManager = FileManager.default
 
         do {
@@ -207,6 +215,40 @@ private struct EditorWindow: View {
         }
     }
 }
+
+private struct TransientEditorPersistence: EditorPersistence {
+    func loadText() throws -> String { "" }
+    func saveText(_ text: String) throws {}
+}
+
+private let markdownPreviewSmokeFixture = """
+# PromptPad Markdown Preview
+
+**Bold**, *italic*, ***combined***, ~~strikethrough~~, and `inline code`.
+
+> A blockquote with a [link](https://example.com).
+
+- Unordered item
+  - Nested item
+1. Ordered item
+- [ ] Pending task
+- [x] Completed task
+
+```swift
+let greeting = "Hello"
+
+print(greeting)
+```
+
+| Syntax | Status |
+| --- | --- |
+| Preview | Working |
+
+---
+
+Hard break here\\
+Next line with escaped \\*markers\\* and <https://example.com>.
+"""
 
 private var editorBackgroundColor: Color {
     #if os(macOS)
