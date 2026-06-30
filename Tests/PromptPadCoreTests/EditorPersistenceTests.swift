@@ -56,6 +56,15 @@ final class EditorPersistenceTests: XCTestCase {
         )
     }
 
+    func testMarkdownPreviewRendersInlineCode() {
+        let rendered = MarkdownPreviewRenderer.attributedString(from: "Use `swift test` here")
+
+        XCTAssertEqual(String(rendered.characters), "Use swift test here")
+        XCTAssertTrue(rendered.runs.contains { run in
+            run.inlinePresentationIntent?.contains(.code) == true
+        })
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 
