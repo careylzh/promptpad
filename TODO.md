@@ -21,7 +21,7 @@ promptpad:
     * [x] task lists with checked and unchecked items. Done: task rows render distinct checked and unchecked symbols; parser coverage added.
     * [x] links (`[label](https://example.com)`). Done: link labels and destinations render through attributed Markdown with semantic coverage.
     * [x] images (`![alt text](https://example.com/image.png)`). Done: standalone image syntax renders asynchronously with alt-text fallback and parser coverage.
-    * [ ] automatic links (`<https://example.com>`)
+    * [x] automatic links (`<https://example.com>`). Done: automatic URL syntax produces a linked destination with semantic coverage.
     * [ ] horizontal rules (`---`, `***`, or `___`)
     * [ ] escaped Markdown characters
     * [ ] hard line breaks

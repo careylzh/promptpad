@@ -134,6 +134,13 @@ final class EditorPersistenceTests: XCTestCase {
         )
     }
 
+    func testMarkdownPreviewRendersAutomaticLink() {
+        let rendered = MarkdownPreviewRenderer.attributedString(from: "<https://example.com>")
+
+        XCTAssertEqual(String(rendered.characters), "https://example.com")
+        XCTAssertTrue(rendered.runs.contains { $0.link?.absoluteString == "https://example.com" })
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 
