@@ -18,7 +18,7 @@ promptpad:
     * [x] unordered lists. Done: unordered rows render with bullet markers and parser coverage.
     * [x] ordered lists. Done: ordered rows retain and render their source ordinals; parser coverage added.
     * [x] nested lists. Done: two-space and tab indentation produce nested list levels with visual indentation.
-    * [ ] task lists with checked and unchecked items
+    * [x] task lists with checked and unchecked items. Done: task rows render distinct checked and unchecked symbols; parser coverage added.
     * [ ] links (`[label](https://example.com)`)
     * [ ] images (`![alt text](https://example.com/image.png)`)
     * [ ] automatic links (`<https://example.com>`)

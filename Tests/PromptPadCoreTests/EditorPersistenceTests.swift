@@ -108,6 +108,16 @@ final class EditorPersistenceTests: XCTestCase {
         XCTAssertEqual(items.map(\.kind), [.unordered, .unordered, .ordered])
     }
 
+    func testMarkdownPreviewExtractsTaskListStates() {
+        let content = MarkdownPreviewContent(markdown: "- [ ] Pending\n- [x] Complete")
+
+        guard case .list(let items) = content.blocks.first else {
+            return XCTFail("Expected a list block")
+        }
+        XCTAssertEqual(items.map(\.taskState), [.unchecked, .checked])
+        XCTAssertEqual(items.map(\.text), ["Pending", "Complete"])
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 
