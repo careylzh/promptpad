@@ -11,6 +11,7 @@ public enum MarkdownPreviewRenderer {
 
 public enum MarkdownPreviewBlock: Equatable, Sendable {
     case markdown(String)
+    case heading(level: Int, text: String)
     case spacer
     case divider
     case table(MarkdownPreviewTable)
@@ -66,8 +67,35 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
         appendParagraph()
         self.blocks = rawBlocks.flatMap { block in
             guard case .markdown(let source) = block else { return [block] }
+            return Self.extractHeadings(from: source)
+        }.flatMap { block in
+            guard case .markdown(let source) = block else { return [block] }
             return Self.extractTables(from: source)
         }
+    }
+
+    private static func extractHeadings(from source: String) -> [MarkdownPreviewBlock] {
+        let lines = source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var blocks: [MarkdownPreviewBlock] = []
+        var markdownLines: [String] = []
+
+        func appendMarkdown() {
+            guard !markdownLines.isEmpty else { return }
+            blocks.append(.markdown(markdownLines.joined(separator: "\n")))
+            markdownLines.removeAll(keepingCapacity: true)
+        }
+
+        for line in lines {
+            let level = line.prefix { $0 == "#" }.count
+            guard (1...6).contains(level), line.dropFirst(level).first == " " else {
+                markdownLines.append(line)
+                continue
+            }
+            appendMarkdown()
+            blocks.append(.heading(level: level, text: String(line.dropFirst(level + 1))))
+        }
+        appendMarkdown()
+        return blocks
     }
 
     private static func extractTables(from source: String) -> [MarkdownPreviewBlock] {

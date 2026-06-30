@@ -12,6 +12,10 @@ struct StructuredMarkdownPreviewView: View {
                     case .markdown(let source):
                         Text(renderedMarkdown(from: source))
                             .frame(maxWidth: .infinity, alignment: .leading)
+                    case .heading(let level, let text):
+                        Text(renderedMarkdown(from: text))
+                            .font(.system(size: headingFontSize(for: level), weight: .bold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     case .spacer:
                         Color.clear
                             .frame(height: PromptPadStyle.editorFontSize)
@@ -38,6 +42,17 @@ struct StructuredMarkdownPreviewView: View {
 
     private func renderedMarkdown(from source: String) -> AttributedString {
         MarkdownPreviewRenderer.attributedString(from: source)
+    }
+
+    private func headingFontSize(for level: Int) -> CGFloat {
+        switch level {
+        case 1: 34
+        case 2: 30
+        case 3: 27
+        case 4: 24
+        case 5: 22
+        default: 20
+        }
     }
 
     private func tableView(_ table: MarkdownPreviewTable) -> some View {

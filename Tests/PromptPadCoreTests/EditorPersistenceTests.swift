@@ -45,6 +45,17 @@ final class EditorPersistenceTests: XCTestCase {
         })
     }
 
+    func testMarkdownPreviewExtractsAllHeadingLevels() {
+        let source = (1...6).map { level in
+            String(repeating: "#", count: level) + " Heading \(level)"
+        }.joined(separator: "\n")
+
+        XCTAssertEqual(
+            MarkdownPreviewContent(markdown: source).blocks,
+            (1...6).map { .heading(level: $0, text: "Heading \($0)") }
+        )
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

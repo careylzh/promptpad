@@ -11,7 +11,7 @@ promptpad:
     * [x] italic. Done: emphasis renders in Preview and is covered by a semantic renderer test.
     * [x] bold and italic combined. Done: combined strong emphasis is covered by a semantic renderer test.
     * [x] strikethrough. Done: strikethrough renders in Preview and is covered by a semantic renderer test.
-    * [ ] headings (levels 1–6)
+    * [x] headings (levels 1–6). Done: headings render as explicit blocks with descending type sizes and parser coverage.
     * [ ] inline code
     * [ ] fenced code blocks, including optional language identifiers
     * [ ] blockquotes
