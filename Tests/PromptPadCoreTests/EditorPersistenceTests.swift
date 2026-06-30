@@ -65,6 +65,15 @@ final class EditorPersistenceTests: XCTestCase {
         })
     }
 
+    func testMarkdownPreviewExtractsFencedCodeWithLanguageAndBlankLines() {
+        let content = MarkdownPreviewContent(markdown: "```swift\nlet value = 1\n\nprint(value)\n```")
+
+        XCTAssertEqual(
+            content.blocks,
+            [.codeBlock(language: "swift", code: "let value = 1\n\nprint(value)")]
+        )
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

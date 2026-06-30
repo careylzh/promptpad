@@ -13,7 +13,7 @@ promptpad:
     * [x] strikethrough. Done: strikethrough renders in Preview and is covered by a semantic renderer test.
     * [x] headings (levels 1–6). Done: headings render as explicit blocks with descending type sizes and parser coverage.
     * [x] inline code. Done: inline code renders in Preview and is covered by a semantic renderer test.
-    * [ ] fenced code blocks, including optional language identifiers
+    * [x] fenced code blocks, including optional language identifiers. Done: fenced code renders in a monospaced panel with optional language labels and preserves blank lines.
     * [ ] blockquotes
     * [ ] unordered lists
     * [ ] ordered lists

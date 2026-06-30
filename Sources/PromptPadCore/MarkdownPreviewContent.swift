@@ -12,6 +12,7 @@ public enum MarkdownPreviewRenderer {
 public enum MarkdownPreviewBlock: Equatable, Sendable {
     case markdown(String)
     case heading(level: Int, text: String)
+    case codeBlock(language: String?, code: String)
     case spacer
     case divider
     case table(MarkdownPreviewTable)
@@ -39,6 +40,8 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
         var rawBlocks: [MarkdownPreviewBlock] = []
         var paragraphLines: [Substring] = []
         var emptyLineCount = 0
+        var codeFenceLanguage: String?
+        var codeLines: [String] = []
 
         func appendParagraph() {
             guard !paragraphLines.isEmpty else { return }
@@ -47,6 +50,25 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
         }
 
         for line in lines {
+            if codeFenceLanguage != nil {
+                if line.hasPrefix("```") {
+                    rawBlocks.append(.codeBlock(language: codeFenceLanguage == "" ? nil : codeFenceLanguage, code: codeLines.joined(separator: "\n")))
+                    codeFenceLanguage = nil
+                    codeLines.removeAll(keepingCapacity: true)
+                } else {
+                    codeLines.append(String(line))
+                }
+                continue
+            }
+
+            if line.hasPrefix("```") {
+                appendParagraph()
+                let language = line.dropFirst(3).trimmingCharacters(in: .whitespaces)
+                codeFenceLanguage = language
+                emptyLineCount = 0
+                continue
+            }
+
             if line.isEmpty {
                 emptyLineCount += 1
                 continue
@@ -64,6 +86,9 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
             paragraphLines.append(line)
         }
 
+        if codeFenceLanguage != nil {
+            rawBlocks.append(.codeBlock(language: codeFenceLanguage == "" ? nil : codeFenceLanguage, code: codeLines.joined(separator: "\n")))
+        }
         appendParagraph()
         self.blocks = rawBlocks.flatMap { block in
             guard case .markdown(let source) = block else { return [block] }

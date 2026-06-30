@@ -16,6 +16,22 @@ struct StructuredMarkdownPreviewView: View {
                         Text(renderedMarkdown(from: text))
                             .font(.system(size: headingFontSize(for: level), weight: .bold))
                             .frame(maxWidth: .infinity, alignment: .leading)
+                    case .codeBlock(let language, let code):
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let language {
+                                Text(language)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.tertiary)
+                            }
+                            ScrollView(.horizontal) {
+                                Text(code)
+                                    .font(.system(size: PromptPadStyle.editorFontSize, design: .monospaced))
+                                    .textSelection(.enabled)
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                     case .spacer:
                         Color.clear
                             .frame(height: PromptPadStyle.editorFontSize)
