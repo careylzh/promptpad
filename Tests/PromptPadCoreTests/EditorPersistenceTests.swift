@@ -74,6 +74,12 @@ final class EditorPersistenceTests: XCTestCase {
         )
     }
 
+    func testMarkdownPreviewExtractsMultilineBlockquote() {
+        let content = MarkdownPreviewContent(markdown: "> First line\n> Second **line**")
+
+        XCTAssertEqual(content.blocks, [.blockquote("First line\nSecond **line**")])
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

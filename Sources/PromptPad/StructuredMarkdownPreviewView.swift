@@ -32,6 +32,15 @@ struct StructuredMarkdownPreviewView: View {
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                    case .blockquote(let source):
+                        HStack(alignment: .top, spacing: 12) {
+                            Rectangle()
+                                .fill(.secondary.opacity(0.45))
+                                .frame(width: 3)
+                            Text(renderedMarkdown(from: source))
+                                .italic()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     case .spacer:
                         Color.clear
                             .frame(height: PromptPadStyle.editorFontSize)

@@ -13,6 +13,7 @@ public enum MarkdownPreviewBlock: Equatable, Sendable {
     case markdown(String)
     case heading(level: Int, text: String)
     case codeBlock(language: String?, code: String)
+    case blockquote(String)
     case spacer
     case divider
     case table(MarkdownPreviewTable)
@@ -95,8 +96,42 @@ public struct MarkdownPreviewContent: Equatable, Sendable {
             return Self.extractHeadings(from: source)
         }.flatMap { block in
             guard case .markdown(let source) = block else { return [block] }
+            return Self.extractBlockquotes(from: source)
+        }.flatMap { block in
+            guard case .markdown(let source) = block else { return [block] }
             return Self.extractTables(from: source)
         }
+    }
+
+    private static func extractBlockquotes(from source: String) -> [MarkdownPreviewBlock] {
+        let lines = source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var blocks: [MarkdownPreviewBlock] = []
+        var markdownLines: [String] = []
+        var quoteLines: [String] = []
+
+        func appendMarkdown() {
+            guard !markdownLines.isEmpty else { return }
+            blocks.append(.markdown(markdownLines.joined(separator: "\n")))
+            markdownLines.removeAll(keepingCapacity: true)
+        }
+        func appendQuote() {
+            guard !quoteLines.isEmpty else { return }
+            blocks.append(.blockquote(quoteLines.joined(separator: "\n")))
+            quoteLines.removeAll(keepingCapacity: true)
+        }
+
+        for line in lines {
+            if line == ">" || line.hasPrefix("> ") {
+                appendMarkdown()
+                quoteLines.append(line == ">" ? "" : String(line.dropFirst(2)))
+            } else {
+                appendQuote()
+                markdownLines.append(line)
+            }
+        }
+        appendQuote()
+        appendMarkdown()
+        return blocks
     }
 
     private static func extractHeadings(from source: String) -> [MarkdownPreviewBlock] {
