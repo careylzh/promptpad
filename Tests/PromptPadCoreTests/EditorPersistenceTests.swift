@@ -89,6 +89,15 @@ final class EditorPersistenceTests: XCTestCase {
         ])])
     }
 
+    func testMarkdownPreviewExtractsOrderedListWithSourceOrdinals() {
+        let content = MarkdownPreviewContent(markdown: "3. Third\n4. Fourth")
+
+        XCTAssertEqual(content.blocks, [.list([
+            MarkdownPreviewListItem(kind: .ordered, level: 0, ordinal: 3, text: "Third"),
+            MarkdownPreviewListItem(kind: .ordered, level: 0, ordinal: 4, text: "Fourth")
+        ])])
+    }
+
     func testMarkdownPreviewPreservesOneEmptyLine() {
         let content = MarkdownPreviewContent(markdown: "First\n\nSecond")
 

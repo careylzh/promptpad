@@ -16,7 +16,7 @@ promptpad:
     * [x] fenced code blocks, including optional language identifiers. Done: fenced code renders in a monospaced panel with optional language labels and preserves blank lines.
     * [x] blockquotes. Done: contiguous quote lines render with a quote rail and italic content; parser coverage added.
     * [x] unordered lists. Done: unordered rows render with bullet markers and parser coverage.
-    * [ ] ordered lists
+    * [x] ordered lists. Done: ordered rows retain and render their source ordinals; parser coverage added.
     * [ ] nested lists
     * [ ] task lists with checked and unchecked items
     * [ ] links (`[label](https://example.com)`)
