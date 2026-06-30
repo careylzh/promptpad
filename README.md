@@ -1,5 +1,9 @@
 # PromptPad
 
+<p align="center">
+  <img src="Assets/PromptPad-AppIcon.png" alt="PromptPad app icon" width="220">
+</p>
+
 PromptPad is a minimal macOS and iOS Markdown prompt editor built with SwiftUI and a small `PromptPadCore` library for testable editor behavior.
 
 ## Requirements
